@@ -1,5 +1,5 @@
-
 const authRouters = require("./authRouters");
+
 
 exports.plugin = {
     name: "apiRoutes",

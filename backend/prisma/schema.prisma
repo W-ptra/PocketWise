@@ -9,33 +9,33 @@ datasource db {
 }
 
 model User {
-  id  Int @id @default(autoincrement())
-  name String
-  email String
-  password String
-  saldo Saldo?
-  transactions Transaction[]
+  id            Int @id @default(autoincrement())
+  name          String
+  email         String
+  password      String
+  saldo         Saldo?
+  transactions  Transaction[]
 }
 
 model Saldo {
-  id Int @id @default(autoincrement())
-  amount Decimal
-  userId Int @unique
-  user User @relation(fields: [userId],references: [id])
+  id      Int         @id @default(autoincrement())
+  amount  Decimal
+  userId  Int         @unique
+  user    User        @relation(fields: [userId],references: [id])
 }
 
 model TransactionType {
-  id Int @id @default(autoincrement())
-  name String
-  transactions Transaction[]
+  id            Int @id @default(autoincrement())
+  name          String
+  transactions  Transaction[]
 }
 
 model Transaction {
-  id Int @id @default(autoincrement())
-  amount Decimal
-  createdAt DateTime
-  userId Int @unique
-  transactionTypeId Int @unique
-  user User @relation(fields: [userId], references: [id])
-  transactionType TransactionType @relation(fields: [transactionTypeId], references: [id])
+  id                Int             @id @default(autoincrement())
+  amount            Decimal
+  createdAt         DateTime
+  userId            Int             @unique
+  transactionTypeId Int             @unique
+  user              User            @relation(fields: [userId], references: [id])
+  transactionType   TransactionType @relation(fields: [transactionTypeId], references: [id])
 }

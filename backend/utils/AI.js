@@ -65,3 +65,8 @@ async function ask(message){
 
     return result.choices[0].message.content;
 }
+
+module.exports = {
+    ocr,
+    ask
+}

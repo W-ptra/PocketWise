@@ -2,16 +2,17 @@ const { OCRSchema } = require("./schema");
 const OpenAI = require("openai");
 require("dotenv").config();
 
+const baseURL = "https://api.studio.nebius.com/v1/";
 const OCRSchemaJsonStringify = JSON.stringify(OCRSchema);
 
 const qwenClient = new OpenAI({
-  baseURL: "https://api.studio.nebius.com/v1/",
-  apiKey: process.env.NEBIUS_QWEN_API_KEY,
+    baseURL,
+    apiKey: process.env.NEBIUS_QWEN_API_KEY,
 });
 
 const deepseekClient = new OpenAI({
-  baseURL: "https://api.studio.nebius.com/v1/",
-  apiKey: process.env.NEBIUS_DEEPSEEK_API_KEY,
+    baseURL,
+    apiKey: process.env.NEBIUS_DEEPSEEK_API_KEY,
 });
 
 async function ocr(imageBase64) {
@@ -36,9 +37,8 @@ async function ocr(imageBase64) {
     const response = await qwenClient.chat.completions.create({
         model: "Qwen/Qwen2-VL-72B-Instruct",
         temperature: 0,
-        messages,
+        messages
     });
-
     const reponseObject = JSON.parse(response.choices[0].message.content);
     return reponseObject;
 }
@@ -63,5 +63,5 @@ async function ask(message){
         "messages": messages
     })
 
-    console.log(result.choices[0].message.content);
+    return result.choices[0].message.content;
 }

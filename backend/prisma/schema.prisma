@@ -39,3 +39,9 @@ model Transaction {
   user              User            @relation(fields: [userId], references: [id])
   transactionType   TransactionType @relation(fields: [transactionTypeId], references: [id])
 }
+
+model EmailLog {
+  id        Int @id @default(autoincrement())
+  request   Json
+  reponse   Json?
+}

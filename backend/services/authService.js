@@ -1,5 +1,5 @@
 const { isInputInvalid } = require("../utils/validation")
-const { createUser,getUserByEmail } = require("../model/userModel")
+const { createUser,getUserByEmail } = require("../database/userDatabase")
 const { hashPassword,comparePassword } = require("../utils/hashing")
 const { generateJwt } = require("../utils/jwt");
 

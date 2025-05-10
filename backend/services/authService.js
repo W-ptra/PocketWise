@@ -1,7 +1,17 @@
-const { isInputInvalid } = require("../utils/validation")
-const { createUser,getUserByEmail } = require("../database/userDatabase")
-const { hashPassword,comparePassword } = require("../utils/hashing")
+const { createUser, getUserByEmail, updatePassword } = require("../database/postgres/userDatabase");
+const { hashPassword, comparePassword } = require("../utils/hashing");
+const { sendPasswordResetEmail } = require("../utils/email");
+const { isInputInvalid } = require("../utils/validation");
+const { getUuidv4 } = require("../utils/random");
 const { generateJwt } = require("../utils/jwt");
+const { 
+    setForgotPasswordUniqueString, 
+    getForgotPasswordUniqueString,
+    deleteValue 
+} = require("../database/redis/cacheForgotPassword");
+require("dotenv").config();
+
+const host = process.env.HOST;
 
 async function login(request,h){
     const { email, password } = request.payload;
@@ -60,7 +70,61 @@ async function register(request,h){
     }).code(201);
 }
 
+async function requestResetPassword(request,h){
+    const { email } = request.payload;
+
+    if(isInputInvalid(email))
+        return h.response({
+            error:"input is invalid"
+        }).code(400);
+
+    const user = await getUserByEmail(email);
+    if(!user)
+        return h.response({
+            error:`user with email ${email} doesn't exist`
+        }).code(409);
+
+    const uniqueString = getUuidv4();
+    const url = `${host}/api/auth/reset-password/${uniqueString}`;
+
+    await setForgotPasswordUniqueString(uniqueString,email);
+    await sendPasswordResetEmail(email,url);
+    
+    return h.response({
+        message:`reset password link has been sent to ${email}`
+    }).code(200);
+}
+
+async function changePassword(request,h){
+    const uniqueString = request.params.id;
+    const { password } = request.payload;
+
+    if(isInputInvalid(password))
+        return h.response({
+            error:"input is invalid"
+        }).code(400);
+
+    const email = await getForgotPasswordUniqueString(uniqueString);
+
+    if(!email)
+        return h.response({
+            error:"reset password link might expired or invalid"
+        }).code(400);
+
+    let user = await getUserByEmail(email);
+    const hashedPassword =  await hashPassword(password);
+    await updatePassword(user.id,hashedPassword);
+    
+    await deleteValue(uniqueString);
+
+    return h.response({
+        message:`password successfully update`
+    }).code(201);
+}
+
 module.exports = {
     login,
-    register
+    register,
+    requestResetPassword,
+    changePassword
 }

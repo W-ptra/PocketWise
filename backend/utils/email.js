@@ -1,38 +1,24 @@
 const { Resend } = require("resend");
-const { createEmailLog } = require("../database/emailDatabase");
+const { createEmailLog } = require("../database/postgres/emailDatabase");
 require("dotenv").config();
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-async function sendEmail(emailAddress,subject,html){
-    const request = {
-        from: "no-reply@wisnup.tech",
-        to: [emailAddress],
-        subject: subject,
-        html: html
-    }
-    console.log(`sending email to ${emailAddress}`)
-    const response = await resend.emails.send(request);
-    console.log(`resend api response: \n${JSON.stringify(response)}`);
-
-
-    const requestCopy = {
-        from: request["from"],
-        to: request["to"],
-        subject: request["subject"],
-    }
-    createEmailLog(requestCopy,response);
-    return response;
-}
-
-async function forgetPassword(emailAddress,uniqueUrl){
+async function sendPasswordResetEmail(emailAddress,uniqueUrl){
     const html = `
         <div style="font-family: Arial, sans-serif; background-color: #F2F2F2; padding: 10px; margin: 0;">
             
             <!-- Header -->
             <div style="background-color: #ffffff; padding: 20px; text-align: center;">
             <h1 style="margin: 0; color: #00AB6B;">PocketWise</h1>
-            <p style="margin: 0; font-size: 16px; color: #787878;">Smart Life, Smart <span color: #00AB6B;><strong>Money</strong><span/></p>
+            <p style="margin: 0; font-size: 16px;"> 
+                <span style="color: #787878;"> 
+                    Smart Life, Smart 
+                </span>
+                <span  style="color: #00AB6B; font-weight:bold;">
+                    Money
+                <span/>
+            </p>
             </div>
 
             <!-- Body -->
@@ -54,15 +40,59 @@ async function forgetPassword(emailAddress,uniqueUrl){
         </div>
         `;
     const subject = "password reset request"
-    const response = await sendEmail(
-        emailAddress,
-        subject,
-        html
-    )
-    console.log(response)
+    const response = await sendEmailWith3Retry(emailAddress,subject,html);
+
     return response;
 }
 
+async function sendEmail(emailAddress,subject,html){
+    const request = {
+        from: "no-reply@wisnup.tech",
+        to: [emailAddress],
+        subject: subject,
+        html: html
+    }
+    console.log(`sending email to ${emailAddress}`)
+    const response = await resend.emails.send(request);
+    console.log(`resend api response: \n${JSON.stringify(response)}`);
+
+    const requestCopy = {
+        from: request["from"],
+        to: request["to"],
+        subject: request["subject"],
+    }
+    createEmailLog(requestCopy,response);
+
+    if(response.error !== null)
+        throw new Error("failed to send email");
+
+    return response;
+}
+
+async function sendEmailWith3Retry(emailAddress,subject,html){
+    // sending email with 3x retry if error
+    try{
+        return await sendEmail(emailAddress,subject,html);
+    }
+    catch(err){
+        try{
+            console.log("retry send email 1x");
+            return await sendEmail(emailAddress,subject,html);
+        }
+        catch(err){
+            try{
+                console.log("retry send email 3x");
+                return await sendEmail(emailAddress,subject,html);
+            }
+            catch(err){
+                console.log(err);
+                return null;
+            }
+        }
+        
+    }
+}
+
 module.exports = {
-    forgetPassword
+    sendPasswordResetEmail
 }

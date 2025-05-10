@@ -10,6 +10,11 @@ const init = async () => {
   const server = Hapi.server({
     port: process.env.PORT || 3000,
     host: "0.0.0.0",
+    routes: {
+    cors: {
+      origin: [process.env.CORS],
+    }
+  }
   });
   
   server.ext("onRequest", requestTimeCounting);
@@ -24,7 +29,7 @@ const init = async () => {
   await server.start();
   console.log(
     "Registered Routes:",
-    server.table().map((route) => route.path)
+    server.table().map((route) => `${route.method.toUpperCase()} ${route.path}`)
   );
   console.log("Server running on %s", server.info.uri);
 };

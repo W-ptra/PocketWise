@@ -1,5 +1,5 @@
 const authRouters = require("./authRouters");
-
+const userRoutes = require("./userRouters");
 
 exports.plugin = {
     name: "apiRoutes",
@@ -8,6 +8,13 @@ exports.plugin = {
             plugin: authRouters,
             routes: {
                 prefix: "/api/auth"
+            }
+        });
+
+        await server.register({
+            plugin: userRoutes,
+            routes: {
+                prefix: "/api/user"
             }
         });
     }

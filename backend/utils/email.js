@@ -14,7 +14,14 @@ async function sendEmail(emailAddress,subject,html){
     console.log(`sending email to ${emailAddress}`)
     const response = await resend.emails.send(request);
     console.log(`resend api response: \n${JSON.stringify(response)}`);
-    //createEmailLog(request,response);
+
+
+    const requestCopy = {
+        from: request["from"],
+        to: request["to"],
+        subject: request["subject"],
+    }
+    createEmailLog(requestCopy,response);
     return response;
 }
 
@@ -56,4 +63,6 @@ async function forgetPassword(emailAddress,uniqueUrl){
     return response;
 }
 
-forgetPassword("wssnpgames@gmail.com","https://www.google.com/s/7bdc131d-2633-4953-8501-d27ba1df6cd0")
+module.exports = {
+    forgetPassword
+}

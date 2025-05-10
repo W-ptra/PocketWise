@@ -11,3 +11,5 @@ npx prisma migrate dev
 npx prisma generate
 npm run start
 ```
+## System Design
+![img](https://drive.google.com/uc?export=view&id=1VNRXQFmlk2dAVqWfhYf1COBjcw-9J48c)

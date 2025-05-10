@@ -17,6 +17,7 @@
     "dotenv": "^16.5.0",
     "jsonwebtoken": "^9.0.2",
     "openai": "^4.97.0",
+    "redis": "^5.0.1",
     "resend": "^4.5.1"
   },
   "devDependencies": {

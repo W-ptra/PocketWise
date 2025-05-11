@@ -5,6 +5,7 @@ const {
   updateTransaction,
   deleteTransactions,
 } = require("../database/postgres/transactionDatabase");
+const { getSaldoByUserId,updateSaldoByUserId } = require("../database/postgres/saldoDatabase");
 const { getTransactionTypesByIds } = require("../database/postgres/transactionTypeDatabase");
 const customParseFormat = require("dayjs/plugin/customParseFormat");
 const { isInputInvalid } = require("../utils/validation");
@@ -58,6 +59,8 @@ async function createNewTransactions(request, h) {
 
     newTransactions = await createTransactions(newTransactions);
 
+    const totalAmount = getTotalAmount(newTransactions);
+    await updateSaldo(user.id,totalAmount);
     return h
       .response({
         message: "Successfully created new transactions",
@@ -107,10 +110,18 @@ async function updateTransactions(request, h) {
           error: `Transaction with IDs: ${forbiddenTransactionIds.join(", ")} doesn't belong to current User`,
         })
         .code(403);
+
+    const totalAmountOld = await getTotalAmountFromTransaction(newTransactions);
+    console.log("totalAmountOld",totalAmountOld)
     newTransactions = await updateTransaction(
       user.id,
       newTransactions
     );
+
+    const totalAmountNew = getTotalAmount(newTransactions);
+    console.log("totalAmountNew",totalAmountNew)
+    const delta = totalAmountNew - totalAmountOld;
+    await updateSaldo(user.id,delta);
 
     return h
       .response({
@@ -153,7 +164,11 @@ async function deleteTransaction(request, h) {
       })
       .code(403);
 
+  const totalAmount = (getTotalAmount(transactions) * -1);
+
   await deleteTransactions(transactionIds);
+
+  await updateSaldo(user.id,totalAmount);
 
   return h
     .response({
@@ -167,9 +182,9 @@ function getNewTransactionsFromRequestPayload(userId, transactions) {
     return {
       id: transaction.id,
       title: transaction.title,
-      amount: transaction.amount,
-      createdAt: dayjs(transaction.createdAt, "YYYY/MM/DD").toDate(),
-      transactionTypeId: transaction.transactionTypeId,
+      amount: parseInt(transaction.amount),
+      createdAt: dayjs(transaction.createdAt, "YYYY-MM-DD").toDate(),
+      transactionTypeId: parseInt(transaction.transactionTypeId),
       userId: userId,
     };
   });
@@ -222,6 +237,28 @@ function getDistinctTransactionTypeId(transactions) {
   });
   
   return [...distinctTransactionTypeIdsMap.keys()];
+}
+
+async function getTotalAmountFromTransaction(newTransaction){
+  const transactionIds = newTransaction.map((transaction) => transaction.id);
+  const transactionFromDBs = await getTransactionsByIds(transactionIds);
+  return getTotalAmount(transactionFromDBs);
+}
+
+function getTotalAmount(transactions){
+  let total = 0;
+  [...transactions].forEach(transaction => total += parseInt(transaction.amount))
+  return total;
+}
+
+async function updateSaldo(userId,amounts){
+  try{
+  const saldo = await getSaldoByUserId(userId);
+  const saldoTotalAmount = parseInt(saldo.amount) + parseInt(amounts);
+  await updateSaldoByUserId(userId,saldoTotalAmount);
+  }catch(err){
+    console.log(err)
+  }
 }
 
 module.exports = {

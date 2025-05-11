@@ -2,12 +2,16 @@ const { PrismaClient } = require("../../generated/prisma");
 const prisma = new PrismaClient();
 
 async function createTransactions(transactions) {
-  try{
-      return await prisma.transaction.createMany({
-    data: transactions,
-  });
-  } catch(err){
-    console.log(err)
+  console.log(transactions)
+  try {
+    const created = [];
+    for (const tx of transactions) {
+      const result = await prisma.transaction.create({ data: tx });
+      created.push(result);
+    }
+    return created;
+  } catch (err) {
+    console.log(err);
   }
 }
 

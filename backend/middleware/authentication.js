@@ -1,8 +1,7 @@
 const { validateAndDecodeToken } = require("../utils/jwt")
 
 const publicPaths = [
-    "/api/auth/login",
-    "/api/auth/register"
+    "/api/auth",
 ]
 
 function authentication(request,h){

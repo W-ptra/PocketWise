@@ -3,7 +3,7 @@ const prisma = new PrismaClient;
 
 async function getTransactionTypesByIds(ids) {
     const where = {
-        ids:{
+        id:{
             in: ids
         }
     }

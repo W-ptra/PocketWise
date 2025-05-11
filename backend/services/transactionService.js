@@ -1,174 +1,232 @@
 const {
-    createTransactions,
-    getSingleTransactionByUserId,
-    getTransactionsByUserId,
-    updateTransaction,
-    deleteTransactions
-} = require("../database/postgres/transactionDatabase")
-const { 
-    getTransactionTypesByNames,
-    getTransactionTypesByName,
-    createTransactionTypes,
-    getTransactionTypesByIds,
-} = require("../database/postgres/transactionTypeDatabase");
+  createTransactions,
+  getTransactionsByUserId,
+  getTransactionsByIds,
+  updateTransaction,
+  deleteTransactions,
+} = require("../database/postgres/transactionDatabase");
+const { getTransactionTypesByIds } = require("../database/postgres/transactionTypeDatabase");
+const customParseFormat = require("dayjs/plugin/customParseFormat");
 const { isInputInvalid } = require("../utils/validation");
+const dayjs = require("dayjs");
+dayjs.extend(customParseFormat);
 
-async function getAllTransaction(request,h){
-    const user = request.user;
+async function getAllTransaction(request, h) {
+  const user = request.user;
 
-    const { page,size:pageSize } = request.query;
-    const pagination = {page,pageSize}
-    const transactions = await getTransactionsByUserId(user.id,pagination);
-    
-    return h.response({
-        message:   "successfully retrive transactions data",
-        data: transactions
-    }).code(200);
+  const { page, size: pageSize } = request.query;
+  const pagination = { page, pageSize };
+  const transactions = await getTransactionsByUserId(user.id, pagination);
+
+  return h
+    .response({
+      message: "successfully retrive transactions data",
+      data: transactions,
+    })
+    .code(200);
 }
 
 async function createNewTransactions(request, h) {
-    const user = request.user;
-    const { transactions } = request.payload;
-
-    if(isInputInvalid(transactions))
-        return h.response({
-            message:"invalid input"
-        }).code(400);
-
-    let newTransactionIds = {};
-
-    let newTransactions = transactions.map(transaction => {
-        const newTransactionId = transaction.transacionTypeId;
-        newTransactionIds[newTransactionId] = (newTransactionIds[newTransactionId] || 0) + 1;
-
-        return {
-            amount: transaction.amount,
-            title: transaction.title,
-            transacionTypeId: newTransactionId,
-            userId: user.id
-        };
-    });
-
-    const confirmedTransactionTypes = await getTransactionTypesByIds(Object.keys(newTransactionIds));
-
-    let wrongTransactionIds = [];
-
-    confirmedTransactionTypes.forEach(confirmedTransactionType => {
-        if (!newTransactionIds[confirmedTransactionType.id]) {
-            wrongTransactionIds.push(confirmedTransactionType.id);
-        }
-    });
-
-    if (wrongTransactionIds.length > 0)
-        return h.response({
-            error:   `Invalid transaction type IDs: ${wrongTransactionIds.join(', ')}`
-        }).code(403);
-
-    newTransactions = await createTransactions(newTransactions);
-
-    return h.response({
-        message:  "Successfully created new transactions",
-        data: newTransactions
-    }).code(200);
-}
-
-async function updateTransactions(request, h) {
+  try {
     const user = request.user;
     const { transactions } = request.payload;
 
     if (isInputInvalid(transactions))
-        return h.response({
-            message:"invalid input"
-        }).code(400);
+      return h
+        .response({
+          message: "invalid input",
+        })
+        .code(400);
 
-    let newTransactionIds = {};
-    let mismatchedTransactions = [];
-    let updatedTransactionIds = [];
+    let newTransactions = getNewTransactionsFromRequestPayload(
+      user.id,
+      transactions
+    );
 
-    let newTransactions = transactions.map(transaction => {
-        const newTransactionId = transaction.transacionTypeId;
+    const invalidTransactionTypeIds =
+      await getInvalidTransactionTypeIds(newTransactions);
 
-        if (transaction.userId !== user.id) {
-            mismatchedTransactions.push(transaction);
-        }
-        updatedTransactionIds.push(transaction.id)
-        newTransactionIds[newTransactionId] = (newTransactionIds[newTransactionId] || 0) + 1;
-
-        return {
-            amount: transaction.amount,
-            title: transaction.title,
-            transacionTypeId: newTransactionId,
-            userId: user.id
-        };
-    });
-
-    if (mismatchedTransactions.length > 0) {
-        const mismatchedIds = mismatchedTransactions.map(t => t.id);
-        return h.response({
-            error:  `Transactions with IDs ${mismatchedIds.join(', ')} do not belong to the current user.`
-        }).code(403);
+    if (invalidTransactionTypeIds.length > 0){
+        console.log("trigger," ,invalidTransactionTypeIds)
+        console.log(newTransactions)
+      return h
+        .response({
+          error: `Invalid transaction type IDs: ${invalidTransactionTypeIds.join(", ")}`,
+        })
+        .code(403);
     }
 
-    const confirmedTransactionTypes = await getTransactionTypesByIds(Object.keys(newTransactionIds));
+    newTransactions = await createTransactions(newTransactions);
 
-    let wrongTransactionIds = [];
-
-    confirmedTransactionTypes.forEach(confirmedTransactionType => {
-        if (!newTransactionIds[confirmedTransactionType.id]) {
-            wrongTransactionIds.push(confirmedTransactionType.id);
-        }
-    });
-
-    if (wrongTransactionIds.length > 0)
-        return h.response({
-            error:  `Invalid transaction type IDs: ${wrongTransactionIds.join(', ')}`
-        }).code(403);
-
-    newTransactions = await updateTransaction(userId,updatedTransactionIds,newTransactions);
-
-    return h.response({
-        message: `Successfully updated transactions`,
-        data: newTransactions
-    }).code(200);
+    return h
+      .response({
+        message: "Successfully created new transactions",
+        data: newTransactions,
+      })
+      .code(200);
+  } catch (err) {
+    console.log(err);
+  }
 }
 
-async function deleteTransaction(request,h) {
+async function updateTransactions(request, h) {
+  try {
     const user = request.user;
+    const { transactions } = request.payload;
 
-    const { ids } = request.payload;
- 
-    if(isInputInvalid(ids))
-        return h.response({
-            message:"invalid input"
-        }).code(400);
+    if (isInputInvalid(transactions))
+      return h
+        .response({
+          message: "invalid input",
+        })
+        .code(400);
 
-    let mismatchedTransactionIds = [];
-    let transactionIds = [];
-    const transactions = await getTransactionsByIds(ids);
+    let newTransactions = getNewTransactionsFromRequestPayload(
+      user.id,
+      transactions
+    );
 
-    transactions.map(transaction => {
-        if(transaction.userId !== user.id){
-            mismatchedTransactionIds.push(transaction.id);
-        }
-        transactionIds.push(transaction.id);
-    });
+    const invalidTransactionIds =
+      await getInvalidTransactionTypeIds(newTransactions);
 
-    if(mismatchedTransactionIds.length > 0)
-        return h.response({
-            error: `Transactions with IDs ${mismatchedTransactionIds.join(', ')} do not belong to the current user.`,
-        }).code(403);
-        
+    if (invalidTransactionIds.length > 0){
+        console.log("trigger", invalidTransactionIds)
+      return h
+        .response({
+          error: `Invalid transaction type IDs: ${invalidTransactionIds}`,
+        })
+        .code(403);
+    }
+    const forbiddenTransactionIds = await getForbiddenTransactionIds(
+      user.id,
+      newTransactions
+    );
+    if (forbiddenTransactionIds.length > 0)
+      return h
+        .response({
+          error: `Transaction with IDs: ${forbiddenTransactionIds.join(", ")} doesn't belong to current User`,
+        })
+        .code(403);
+    newTransactions = await updateTransaction(
+      user.id,
+      newTransactions
+    );
 
-    await deleteTransactions(transactionIds);
+    return h
+      .response({
+        message: `Successfully updated transactions`,
+        data: newTransactions,
+      })
+      .code(200);
+  } catch (err) {
+    console.log(err);
+  }
+}
 
-    return h.response({
-        message: `Successfully delete transactions with id ${transactionIds.join(', ')}`,
-    }).code(200);
+async function deleteTransaction(request, h) {
+  const user = request.user;
+
+  const { ids } = request.payload;
+
+  if (isInputInvalid(ids))
+    return h
+      .response({
+        message: "invalid input",
+      })
+      .code(400);
+
+  let mismatchedTransactionIds = [];
+  let transactionIds = [];
+  const transactions = await getTransactionsByIds(ids);
+
+  transactions.map((transaction) => {
+    if (transaction.userId !== user.id) {
+      mismatchedTransactionIds.push(transaction.id);
+    }
+    transactionIds.push(transaction.id);
+  });
+
+  if (mismatchedTransactionIds.length > 0)
+    return h
+      .response({
+        error: `Transactions with IDs ${mismatchedTransactionIds.join(", ")} do not belong to the current user.`,
+      })
+      .code(403);
+
+  await deleteTransactions(transactionIds);
+
+  return h
+    .response({
+      message: `Successfully delete transactions with id ${transactionIds.join(", ")}`,
+    })
+    .code(200);
+}
+
+function getNewTransactionsFromRequestPayload(userId, transactions) {
+  return transactions.map((transaction) => {
+    return {
+      id: transaction.id,
+      title: transaction.title,
+      amount: transaction.amount,
+      createdAt: dayjs(transaction.createdAt, "YYYY/MM/DD").toDate(),
+      transactionTypeId: transaction.transactionTypeId,
+      userId: userId,
+    };
+  });
+}
+
+async function getInvalidTransactionTypeIds(transactions) {
+  const distinctTransactionTypeIdsArray =
+    getDistinctTransactionTypeId(transactions);
+
+  const confirmedTransactionTypes = await getTransactionTypesByIds(
+    distinctTransactionTypeIdsArray
+  );
+  const confirmedTransactionTypeIds = confirmedTransactionTypes.map(
+    (confirmedTransactionTypes) => {
+      return confirmedTransactionTypes.id;
+    }
+  );
+
+  let invalidTransactionTypeIds = [];
+  distinctTransactionTypeIdsArray.forEach((distinctTransactionTypeId) => {
+    if (!confirmedTransactionTypeIds.includes(distinctTransactionTypeId)) {
+        invalidTransactionTypeIds.push(distinctTransactionTypeId)
+    }
+  });
+
+  return invalidTransactionTypeIds
+}
+
+async function getForbiddenTransactionIds(userId, transactions) {
+  const transactionIds = transactions.map((transaction) => transaction.id);
+  const transactionFromDBs = await getTransactionsByIds(transactionIds);
+
+  let forbiddenTransactionIds = [];
+  transactionFromDBs.forEach((transactionFromDB) => {
+    if (transactionFromDB.userId !== userId) {
+        forbiddenTransactionIds.push(transactionFromDB.id)
+    }
+  });
+  return forbiddenTransactionIds;
+}
+
+function getDistinctTransactionTypeId(transactions) {
+  const distinctTransactionTypeIdsMap = new Map();
+  transactions.forEach((transaction) => {
+    const id = transaction.transactionTypeId;
+
+    if (!distinctTransactionTypeIdsMap.get(id)) {
+      distinctTransactionTypeIdsMap.set(id, id);
+    }
+  });
+  
+  return [...distinctTransactionTypeIdsMap.keys()];
 }
 
 module.exports = {
-    getAllTransaction,
-    createNewTransactions,
-    updateTransactions,
-    deleteTransaction
-}
+  getAllTransaction,
+  createNewTransactions,
+  updateTransactions,
+  deleteTransaction,
+};

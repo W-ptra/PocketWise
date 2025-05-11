@@ -16,12 +16,12 @@ exports.plugin = {
             },
             {
                 method: "PUT",
-                path: "/{id}",
+                path: "/",
                 handler:  transactionService.updateTransactions
             },
             {
                 method: "DELETE",
-                path: "/{id}",
+                path: "/",
                 handler:  transactionService.deleteTransaction
             }
         ]);

@@ -32,10 +32,11 @@ model TransactionType {
 
 model Transaction {
   id                Int             @id @default(autoincrement())
+  title             String
   amount            Decimal
   createdAt         DateTime
-  userId            Int             @unique
-  transactionTypeId Int             @unique
+  userId            Int             
+  transactionTypeId Int             
   user              User            @relation(fields: [userId], references: [id])
   transactionType   TransactionType @relation(fields: [transactionTypeId], references: [id])
 }

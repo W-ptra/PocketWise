@@ -13,6 +13,16 @@ exports.plugin = {
                 method: "POST",
                 path: "/register",
                 handler:  authService.register
+            },
+            {
+                method: "POST",
+                path: "/request-reset-password",
+                handler:  authService.requestResetPassword
+            },
+            {
+                method: "PUT",
+                path: "/reset-password/{id}",
+                handler:  authService.changePassword
             }
         ]);
     }

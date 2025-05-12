@@ -2,6 +2,8 @@ const authRouters = require("./authRouters");
 const userRoutes = require("./userRouters");
 const transactionRoutes = require("./transactionRouters");
 const transactionTypeRoutes = require("./transactionTypeRouters");
+const saldoRoutes = require("./saldoRouters");
+const aiRoutes = require("./aiRouters");
 
 exports.plugin = {
     name: "apiRoutes",
@@ -31,6 +33,32 @@ exports.plugin = {
             plugin: transactionTypeRoutes,
             routes: {
                 prefix: "/api/transaction-type"
+            }
+        });
+
+        await server.register({
+            plugin: saldoRoutes,
+            routes: {
+                prefix: "/api/saldo"
+            }
+        });
+
+        await server.register({
+            plugin: aiRoutes,
+            routes: {
+                prefix: "/api/ai"
+            }
+        });
+
+        server.route({
+            method: 'OPTIONS',
+            path: '/{path*}',
+            handler: (request, h) => {
+                const response = h.response();
+                response.header('Access-Control-Allow-Origin', '*');
+                response.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+                response.header('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+                return response;
             }
         });
     }

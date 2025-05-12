@@ -5,6 +5,9 @@ const publicPaths = [
 ]
 
 function authentication(request,h){
+    if (request.method === 'options') {
+        return h.continue;
+    }
     const path = request.path;
 
     if(publicPaths.some(public => path.startsWith(public))){

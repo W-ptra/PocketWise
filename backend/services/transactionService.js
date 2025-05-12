@@ -1,4 +1,5 @@
 const {
+  getTransactionByUserIdWithoutPagination,
   createTransactions,
   getTransactionsByUserId,
   getTransactionsByIds,
@@ -15,14 +16,40 @@ dayjs.extend(customParseFormat);
 async function getAllTransaction(request, h) {
   const user = request.user;
 
-  const { page, size: pageSize } = request.query;
-  const pagination = { page, pageSize };
-  const transactions = await getTransactionsByUserId(user.id, pagination);
+  const queryOption = {
+    pagination,
+    type,
+    timeRange,
+    limit
+  } = request.query;
+
+  queryOption["userId"] = user.id;
+  const transactions = await getTransactionsByUserId(queryOption);
 
   return h
     .response({
       message: "successfully retrive transactions data",
       data: transactions,
+    })
+    .code(200);
+}
+
+async function getAllTransactionTypeComparision(request,h){
+  const user = request.user;
+  const queryOption = {
+    pagination,
+    type,
+    timeRange,
+    limit
+  } = request.query;
+  queryOption["userId"] = user.id;
+  const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
+  const transactionTypeComparision = getTransactionTypeComparationFromTransaction(transactions);
+
+  return h
+    .response({
+      message: "successfully retrive transactions comparision",
+      data: transactionTypeComparision,
     })
     .code(200);
 }
@@ -261,7 +288,22 @@ async function updateSaldo(userId,amounts){
   }
 }
 
+function getTransactionTypeComparationFromTransaction(transactions){
+  let total = 0;
+  let comparation = {}
+  transactions.forEach(transaction => {
+    if (!comparation[transaction.transactionType.name]) {
+      comparation[transaction.transactionType.name] = 0;
+    }
+    comparation[transaction.transactionType.name]++;
+    total++;
+  })
+  comparation["total"]=total;
+  return comparation;
+}
+
 module.exports = {
+  getAllTransactionTypeComparision,
   getAllTransaction,
   createNewTransactions,
   updateTransactions,

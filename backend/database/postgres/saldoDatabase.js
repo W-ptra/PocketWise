@@ -14,6 +14,9 @@ async function getSaldoByUserId(userId){
     return await prisma.saldo.findFirst({
         where: {
             userId
+        },
+        select: {
+            amount: true
         }
     })
 }

@@ -10,6 +10,11 @@ exports.plugin = {
                 handler: transactionService.getAllTransaction
             },
             {
+                method: "GET",
+                path: "/comparision",
+                handler: transactionService.getAllTransactionTypeComparision
+            },
+            {
                 method: "POST",
                 path: "/",
                 handler:  transactionService.createNewTransactions

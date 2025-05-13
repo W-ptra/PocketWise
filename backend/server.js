@@ -7,14 +7,17 @@ const { notFound } = require("./middleware/notFound");
 dotenv.config();
 
 const init = async () => {
+  console.log(process.env.CORS)
   const server = Hapi.server({
     port: process.env.PORT || 3000,
     host: "0.0.0.0",
     routes: {
-    cors: {
-      origin: [process.env.CORS],
+      cors: {
+        origin: ["*"],
+        headers: ["Authorization", "Content-Type"],
+        
+      }
     }
-  }
   });
   
   server.ext("onRequest", requestTimeCounting);

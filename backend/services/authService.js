@@ -1,4 +1,5 @@
 const { createUser, getUserByEmail, updatePassword } = require("../database/postgres/userDatabase");
+const { createNewSaldo } = require("../database/postgres/saldoDatabase");
 const { hashPassword, comparePassword } = require("../utils/hashing");
 const { sendPasswordResetEmail } = require("../utils/email");
 const { isInputInvalid } = require("../utils/validation");
@@ -64,6 +65,8 @@ async function register(request,h){
     }
 
     const newUser = await createUser(user);
+
+    await createNewSaldo(newUser.id);
 
     return h.response({
         message:`successfully create new user with id: ${newUser.id}`

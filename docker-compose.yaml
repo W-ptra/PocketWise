@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend-capstone
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      HOST: "http://localhost:3000"
+      PORT: 3000
+      CORS: "*"
+      POSTGRES_URL: "postgresql://root:root@postgres-capstone:5432/capstone?schema=public"
+      REDIS_URL: "redis://redis-capstone:6379"
+      JWT_SECRET: "secret"
+      JWT_EXPIRED_TIME: "1h"
+      NEBIUS_QWEN_API_KEY: ""
+      NEBIUS_DEEPSEEK_API_KEY: ""
+      RESEND_API_KEY: ""
+    ports:
+      - "3000:3000"
+    networks:
+      - capstone_network
+
+  postgres:
+    image: postgres:15
+    container_name: postgres-capstone
+    restart: always
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: capstone
+    ports:
+      - "5432:5432"
+    networks:
+      - capstone_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis-capstone
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - capstone_network
+
+networks:
+  capstone_network:
+    driver: bridge

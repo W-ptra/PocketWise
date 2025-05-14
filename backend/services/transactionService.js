@@ -1,10 +1,12 @@
 const {
+  getTransactionByUserIdWithoutPagination,
   createTransactions,
   getTransactionsByUserId,
   getTransactionsByIds,
   updateTransaction,
   deleteTransactions,
 } = require("../database/postgres/transactionDatabase");
+const { getSaldoByUserId,updateSaldoByUserId } = require("../database/postgres/saldoDatabase");
 const { getTransactionTypesByIds } = require("../database/postgres/transactionTypeDatabase");
 const customParseFormat = require("dayjs/plugin/customParseFormat");
 const { isInputInvalid } = require("../utils/validation");
@@ -14,14 +16,40 @@ dayjs.extend(customParseFormat);
 async function getAllTransaction(request, h) {
   const user = request.user;
 
-  const { page, size: pageSize } = request.query;
-  const pagination = { page, pageSize };
-  const transactions = await getTransactionsByUserId(user.id, pagination);
+  const queryOption = {
+    pagination,
+    type,
+    timeRange,
+    limit
+  } = request.query;
+
+  queryOption["userId"] = user.id;
+  const transactions = await getTransactionsByUserId(queryOption);
 
   return h
     .response({
       message: "successfully retrive transactions data",
       data: transactions,
+    })
+    .code(200);
+}
+
+async function getAllTransactionTypeComparision(request,h){
+  const user = request.user;
+  const queryOption = {
+    pagination,
+    type,
+    timeRange,
+    limit
+  } = request.query;
+  queryOption["userId"] = user.id;
+  const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
+  const transactionTypeComparision = getTransactionTypeComparationFromTransaction(transactions);
+
+  return h
+    .response({
+      message: "successfully retrive transactions comparision",
+      data: transactionTypeComparision,
     })
     .code(200);
 }
@@ -58,6 +86,8 @@ async function createNewTransactions(request, h) {
 
     newTransactions = await createTransactions(newTransactions);
 
+    const totalAmount = getTotalAmount(newTransactions);
+    await updateSaldo(user.id,totalAmount);
     return h
       .response({
         message: "Successfully created new transactions",
@@ -107,10 +137,18 @@ async function updateTransactions(request, h) {
           error: `Transaction with IDs: ${forbiddenTransactionIds.join(", ")} doesn't belong to current User`,
         })
         .code(403);
+
+    const totalAmountOld = await getTotalAmountFromTransaction(newTransactions);
+    console.log("totalAmountOld",totalAmountOld)
     newTransactions = await updateTransaction(
       user.id,
       newTransactions
     );
+
+    const totalAmountNew = getTotalAmount(newTransactions);
+    console.log("totalAmountNew",totalAmountNew)
+    const delta = totalAmountNew - totalAmountOld;
+    await updateSaldo(user.id,delta);
 
     return h
       .response({
@@ -153,7 +191,11 @@ async function deleteTransaction(request, h) {
       })
       .code(403);
 
+  const totalAmount = (getTotalAmount(transactions) * -1);
+
   await deleteTransactions(transactionIds);
+
+  await updateSaldo(user.id,totalAmount);
 
   return h
     .response({
@@ -167,9 +209,9 @@ function getNewTransactionsFromRequestPayload(userId, transactions) {
     return {
       id: transaction.id,
       title: transaction.title,
-      amount: transaction.amount,
-      createdAt: dayjs(transaction.createdAt, "YYYY/MM/DD").toDate(),
-      transactionTypeId: transaction.transactionTypeId,
+      amount: parseInt(transaction.amount),
+      createdAt: dayjs(transaction.createdAt, "YYYY-MM-DD").toDate(),
+      transactionTypeId: parseInt(transaction.transactionTypeId),
       userId: userId,
     };
   });
@@ -224,7 +266,44 @@ function getDistinctTransactionTypeId(transactions) {
   return [...distinctTransactionTypeIdsMap.keys()];
 }
 
+async function getTotalAmountFromTransaction(newTransaction){
+  const transactionIds = newTransaction.map((transaction) => transaction.id);
+  const transactionFromDBs = await getTransactionsByIds(transactionIds);
+  return getTotalAmount(transactionFromDBs);
+}
+
+function getTotalAmount(transactions){
+  let total = 0;
+  [...transactions].forEach(transaction => total += parseInt(transaction.amount))
+  return total;
+}
+
+async function updateSaldo(userId,amounts){
+  try{
+  const saldo = await getSaldoByUserId(userId);
+  const saldoTotalAmount = parseInt(saldo.amount) + parseInt(amounts);
+  await updateSaldoByUserId(userId,saldoTotalAmount);
+  }catch(err){
+    console.log(err)
+  }
+}
+
+function getTransactionTypeComparationFromTransaction(transactions){
+  let total = 0;
+  let comparation = {}
+  transactions.forEach(transaction => {
+    if (!comparation[transaction.transactionType.name]) {
+      comparation[transaction.transactionType.name] = 0;
+    }
+    comparation[transaction.transactionType.name]++;
+    total++;
+  })
+  comparation["total"]=total;
+  return comparation;
+}
+
 module.exports = {
+  getAllTransactionTypeComparision,
   getAllTransaction,
   createNewTransactions,
   updateTransactions,

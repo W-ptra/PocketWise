@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  app:
+  backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -17,11 +17,21 @@ services:
       REDIS_URL: "redis://redis-capstone:6379"
       JWT_SECRET: "secret"
       JWT_EXPIRED_TIME: "1h"
-      NEBIUS_QWEN_API_KEY: ""
-      NEBIUS_DEEPSEEK_API_KEY: ""
-      RESEND_API_KEY: ""
+      NEBIUS_QWEN_API_KEY: "xxx"
+      NEBIUS_DEEPSEEK_API_KEY: "xxx"
+      RESEND_API_KEY: "xxx"
     ports:
       - "3000:3000"
+    networks:
+      - capstone_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend-capstone
+    ports:
+      - "4000:80"
     networks:
       - capstone_network
 

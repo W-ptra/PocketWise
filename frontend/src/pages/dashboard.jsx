@@ -3,9 +3,16 @@ import Footer from "../components/footer";
 
 function Dashboard(){
     return (
-        <div>
+        <div 
+            className="bg-[#F2F2F2]"
+        >
             <Navbar/>
-
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
             <Footer/>
         </div>
     )

@@ -18,7 +18,7 @@ function App() {
         <Route path="/login" element={ <Login/> } />
         <Route path="/register" element={ <Register/> } />
         <Route path="/request-change-password" element={ <RequestChangePassword/> } />
-        <Route path="/change-password" element={ <ChangePassword/> } />
+        <Route path="/change-password/:id" element={ <ChangePassword/> } />
         <Route path="/dashboard" element={ <Dashboard/> } />
         <Route path="/transaction-history" element={ <TransactionHistory/> } />
         <Route path="/analysis" element={ <Analysis/> } />

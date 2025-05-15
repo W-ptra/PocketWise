@@ -1,4 +1,5 @@
 #root {
- font-family: 'inter', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif
+ font-family: 'inter', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+ background-color: #F0F0F0;
 }
 @import "tailwindcss";

@@ -38,6 +38,9 @@ function ChangePassword(){
     const changePassword = async () => {
         setErroMessage("");
         handleIsSubmitChange();
+        setPassword("");
+        setConfirmPassword("");
+        handleIsSubmitChange();
 
         const isInputInvalid = isInputsInvalid(
             password,
@@ -46,6 +49,7 @@ function ChangePassword(){
 
         if(isInputInvalid){
             setErroMessage("Input can't empty");
+            handleIsSubmitChange();
             return
         }
 
@@ -56,17 +60,20 @@ function ChangePassword(){
 
         if(isPasswordAndConfirmNotValid){
             setErroMessage("Password and confirm password not match");
+            handleIsSubmitChange();
             return
         }
+        
         try{
             const respond = await putRequest(`api/auth/reset-password/${id}`,null,{
                 password
             });
 
             if(respond.error){
-            setErroMessage(respond.error);
-            return
-        }
+                setErroMessage(respond.error);
+                handleIsSubmitChange();
+                return
+            }
 
             setMessage(respond.message);
         }
@@ -74,9 +81,6 @@ function ChangePassword(){
             console.log(err);
             setErroMessage("something went wrong");
         }
-        handleIsSubmitChange();
-        setPassword("");
-        setConfirmPassword("");
     }
 
     const setErroMessage = (message) => {

@@ -44,6 +44,10 @@ function Register(){
 
     const register = async () => {
         setErroMessage("");
+        setName("");
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
         handleIsSubmitChange();
 
         const isInputInvalid = isInputsInvalid(
@@ -55,6 +59,7 @@ function Register(){
 
         if(isInputInvalid){
             setErroMessage("Input can't empty");
+            handleIsSubmitChange();
             return
         }
 
@@ -65,6 +70,7 @@ function Register(){
 
         if(isPasswordAndConfirmNotValid){
             setErroMessage("Password and confirm password not match");
+            handleIsSubmitChange();
             return
         }
         try{
@@ -76,6 +82,7 @@ function Register(){
     
             if(respond.error){
                 setErroMessage(respond.error);
+                handleIsSubmitChange();
                 return
             }
     
@@ -86,10 +93,6 @@ function Register(){
             setErroMessage("something went wrong");
         }
         handleIsSubmitChange();
-        setName("");
-        setEmail("");
-        setPassword("");
-        setConfirmPassword("");
     }
 
     const setErroMessage = (message) => {

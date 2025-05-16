@@ -29,6 +29,7 @@ function RequestChangePassword(){
 
     const requestResetLink = async () => {
         setErroMessage("");
+        setEmail("");
         handleIsSubmitChange();
 
         const isInputInvalid = isInputsInvalid(
@@ -37,6 +38,7 @@ function RequestChangePassword(){
 
         if(isInputInvalid){
             setErroMessage("Input can't empty");
+            handleIsSubmitChange();
             return
         }
         try{
@@ -46,6 +48,7 @@ function RequestChangePassword(){
     
             if(respond.error){
                 setErroMessage(respond.error);
+                handleIsSubmitChange();
                 return
             }
     
@@ -56,7 +59,6 @@ function RequestChangePassword(){
             setErroMessage("something went wrong");
         }
         handleIsSubmitChange();
-        setEmail("");
     }
 
     const setErroMessage = (message) => {

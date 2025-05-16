@@ -8,6 +8,7 @@ const { generateJwt } = require("../utils/jwt");
 const { 
     setForgotPasswordUniqueString, 
     getForgotPasswordUniqueString,
+    isEmailAlreadyRequestResetLink,
     deleteValue 
 } = require("../database/redis/cacheForgotPassword");
 require("dotenv").config();
@@ -87,8 +88,15 @@ async function requestResetPassword(request,h){
             error:`user with email ${email} doesn't exist`
         }).code(409);
 
+    const isAlreadyRequested = await isEmailAlreadyRequestResetLink(email);
+
+    if(isAlreadyRequested)
+        return h.response({
+            error:`user with email ${email} already requesting a reset link`
+        }).code(409);
+
     const uniqueString = getUuidv4();
-    const url = `${host}/api/auth/reset-password/${uniqueString}`;
+    const url = `${host}/change-password/${uniqueString}`;
 
     await setForgotPasswordUniqueString(uniqueString,email);
     await sendPasswordResetEmail(email,url);
@@ -118,7 +126,7 @@ async function changePassword(request,h){
     const hashedPassword =  await hashPassword(password);
     await updatePassword(user.id,hashedPassword);
     
-    await deleteValue(uniqueString);
+    await deleteValue(email,uniqueString);
 
     return h.response({
         message:`password successfully update`

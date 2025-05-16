@@ -1,35 +1,33 @@
 const API_URL = import.meta.env.VITE_APP_API_URL;
 
-async function getRequest(endpoint,token){
+async function getRequest(endpoint=null,token=null){
     return await makeApiRequest(endpoint,"GET",token);
 }
 
-async function postRequest(endpoint,token,payload,isFormData){
+async function postRequest(endpoint=null,token=null,payload=null,isFormData=false){
     return await makeApiRequest(endpoint,"POST",token,payload,isFormData);
 }
 
-async function putRequest(endpoint,token,payload){
+async function putRequest(endpoint=null,token=null,payload=null){
     return await makeApiRequest(endpoint,"PUT",token,payload);
 }
 
-async function deleteRequest(endpoint,token,payload){
+async function deleteRequest(endpoint=null,token=null,payload=null){
     return await makeApiRequest(endpoint,"DELETE",token,payload);
 }
 
-async function makeApiRequest(endpoint,method, token=null, payload=null,isFormData=false){
+async function makeApiRequest(endpoint=null,method=null, token=null, payload=null,isFormData=false){
     const url = `${API_URL}/${endpoint}`;
-    
-    const headers = {
-        "Content-Type": "application/json",
+     console.log(endpoint)
+      console.log(method)
+    console.log(token)
+    console.log(isFormData)
+    let requestOption = {
+        method
     }
 
     if(token)
-        headers["Authorization"] = `Bearer ${token}`
-
-    let requestOption = {
-        method,
-        headers,
-    }
+        requestOption.headers["Authorization"] = `Bearer ${token}`
 
     if(payload)
         requestOption = setRequestBody(requestOption,payload,isFormData)
@@ -53,7 +51,7 @@ function setRequestBody(requestOption,payload,isFormData=false){
         requestOption.body = payload;
         return requestOption
     }
-        
+    requestOption.headers = {}
     requestOption.headers["Content-Type"] = "application/json";
     requestOption.body = JSON.stringify(payload);
     return requestOption;

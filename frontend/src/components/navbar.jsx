@@ -11,7 +11,9 @@ function Navbar(){
                 >
                     PocketWise
                 </p>
-                <img className="size-10 rounded-full bg-gray-200 mr-10 cursor-pointer" src="/logo/User.png" alt="" />
+                <a href="/profile">
+                    <img className="size-10 rounded-full bg-gray-200 mr-10 cursor-pointer" src="/logo/User.png" alt="" />
+                </a>
             </div>
             <div
                 className="flex justify-center gap-x-10 flex-1/2 border-[0.1rem] border-white border-t-black mt-2 items-center py-3"

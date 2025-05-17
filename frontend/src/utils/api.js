@@ -26,8 +26,10 @@ async function makeApiRequest(endpoint=null,method=null, token=null, payload=nul
         method
     }
 
-    if(token)
+    if(token){
+        requestOption.headers = {};
         requestOption.headers["Authorization"] = `Bearer ${token}`
+    }
 
     if(payload)
         requestOption = setRequestBody(requestOption,payload,isFormData)
@@ -51,7 +53,8 @@ function setRequestBody(requestOption,payload,isFormData=false){
         requestOption.body = payload;
         return requestOption
     }
-    requestOption.headers = {}
+    if(!requestOption.headers)
+        requestOption.headers = {}
     requestOption.headers["Content-Type"] = "application/json";
     requestOption.body = JSON.stringify(payload);
     return requestOption;

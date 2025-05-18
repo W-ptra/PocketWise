@@ -1,4 +1,6 @@
-const { getUserByEmail, getUserById, updateEmail, updateUser }  = require("../database/postgres/userDatabase");
+const { getUserByEmail, getUserById, updateEmail,updateUserProfileImage, updateUser }  = require("../database/postgres/userDatabase");
+const { getUuidv4 } = require("../utils/random");
+const { uploadImageToStorage } = require("../utils/storage");
 const { isInputInvalid }  = require("../utils/validation");
 
 async function getUserProfile(request,h){
@@ -72,8 +74,39 @@ async function updateUserEmail(request,h){
     }).code(200);
 }
 
+async function uploadProfileImage(request,h){
+    const user = request.user;
+    const data = request.payload;
+    const image = data.image;
+    
+    if (!image || typeof image._read !== "function") {
+        return h.response({ error: "Image is required and must be a file." }).code(400);
+    }
+
+    const chunks = [];
+    for await (const chunk of image) {
+        chunks.push(chunk);
+    }
+    const buffer = Buffer.concat(chunks);
+
+    const mimeType = image.hapi.headers['content-type'];
+    const ext = mimeType.split('/')[1] || 'bin';
+    const filename = `${getUuidv4()}.${ext}`;
+
+    const url = await uploadImageToStorage(filename,buffer);
+
+    await updateUserProfileImage(user.id,url);
+
+    return h
+        .response({
+        message: "successfully upload image profile",
+        })
+        .code(200);
+}
+
 module.exports = {
     getUserProfile,
     updateUserProfile,
-    updateUserEmail
+    updateUserEmail,
+    uploadProfileImage
 }

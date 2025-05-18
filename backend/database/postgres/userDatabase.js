@@ -89,6 +89,18 @@ async function updateEmail(id,email){
     return user;
 }
 
+async function updateUserProfileImage(id,url){
+    const where = { id };
+    const data = { 
+        profileImageUrl: url
+    }
+    const user = await prisma.user.update({
+        where,
+        data
+    })
+    return user;
+}
+
 async function updatePassword(id,password){
      const where = { id };
     const data = { 
@@ -108,5 +120,6 @@ module.exports = {
     getUserById,
     updateUser,
     updateEmail,
+    updateUserProfileImage,
     updatePassword
 }

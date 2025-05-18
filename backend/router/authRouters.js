@@ -23,6 +23,11 @@ exports.plugin = {
                 method: "PUT",
                 path: "/reset-password/{id}",
                 handler:  authService.changePassword
+            },
+            {
+                method: "GET",
+                path: "/google/callback",
+                handler:  authService.handleGoogleOauthCallback
             }
         ]);
     }

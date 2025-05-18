@@ -1,13 +1,15 @@
-const { getUserByEmail, updateEmail, updateUser }  = require("../database/postgres/userDatabase");
+const { getUserByEmail, getUserById, updateEmail, updateUser }  = require("../database/postgres/userDatabase");
 const { isInputInvalid }  = require("../utils/validation");
 
 async function getUserProfile(request,h){
     return h.response({
         message:`success get user profile`,
         data: {
-            id: request.user.id,
-            name: request.user.name,
-            email: request.user.email
+            id:                 request.user.id,
+            name:               request.user.name,
+            email:              request.user.email,
+            profileImageUrl:    request.user.profileImageUrl,
+            authMethod:         request.user.authMethod
         }
     }).code(200);
 }
@@ -21,6 +23,12 @@ async function updateUserProfile(request,h){
         return h.response({
             error:"input is invalid"
         }).code(400);
+
+    const userFromId = await getUserById(user.id);
+    if(userFromId.authMethod !== "web")
+        return h.response({
+            error:`can't update user with email ${user.email}`
+        }).code(409);
 
     await updateUser(user.id,name);
 
@@ -38,6 +46,12 @@ async function updateUserEmail(request,h){
         return h.response({
             error:"input is invalid"
         }).code(400);
+
+    const userFromId = await getUserById(user.id);
+    if(userFromId.authMethod !== "web")
+        return h.response({
+            error:`can't update user with email ${user.email}`
+        }).code(409);
 
     const isEmailExist = await getUserByEmail(email);
     if (isEmailExist)

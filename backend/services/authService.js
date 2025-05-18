@@ -1,4 +1,4 @@
-const { createUser, getUserByEmail, updatePassword } = require("../database/postgres/userDatabase");
+const { createUser, upsertUser, getUserByEmail, updatePassword } = require("../database/postgres/userDatabase");
 const { createNewSaldo } = require("../database/postgres/saldoDatabase");
 const { hashPassword, comparePassword } = require("../utils/hashing");
 const { sendPasswordResetEmail } = require("../utils/email");
@@ -13,7 +13,10 @@ const {
 } = require("../database/redis/cacheForgotPassword");
 require("dotenv").config();
 
-const host = process.env.HOST;
+const frontendHost = process.env.FRONTEND_HOST;
+const backendHost = process.env.BACKEND_HOST;
+const googleOauthClientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+const googleOauthClientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
 
 async function login(request,h){
     const { email, password } = request.payload;
@@ -26,6 +29,11 @@ async function login(request,h){
     const user = await getUserByEmail(email);
     if (user === null)
         return h.response({
+            error:`User with email ${email} is not found`
+        }).code(404);
+
+    if (user.authMethod !== "web")
+         return h.response({
             error:`User with email ${email} is not found`
         }).code(404);
 
@@ -62,7 +70,8 @@ async function register(request,h){
     const user = {
         name,
         email,
-        password: hashedPassword
+        password: hashedPassword,
+        authMethod: "web"
     }
 
     const newUser = await createUser(user);
@@ -88,6 +97,11 @@ async function requestResetPassword(request,h){
             error:`user with email ${email} doesn't exist`
         }).code(409);
 
+    if (user.authMethod !== "web")
+         return h.response({
+            error:`User with email ${email} is not found`
+        }).code(404);
+
     const isAlreadyRequested = await isEmailAlreadyRequestResetLink(email);
 
     if(isAlreadyRequested)
@@ -96,7 +110,7 @@ async function requestResetPassword(request,h){
         }).code(409);
 
     const uniqueString = getUuidv4();
-    const url = `${host}/change-password/${uniqueString}`;
+    const url = `${frontendHost}/change-password/${uniqueString}`;
 
     await setForgotPasswordUniqueString(uniqueString,email);
     await sendPasswordResetEmail(email,url);
@@ -122,7 +136,13 @@ async function changePassword(request,h){
             error:"reset password link might expired or invalid"
         }).code(400);
 
-    let user = await getUserByEmail(email);
+    const user = await getUserByEmail(email);
+
+    if (user.authMethod !== "web")
+         return h.response({
+            error:`User with email ${email} is not found`
+        }).code(404);
+
     const hashedPassword =  await hashPassword(password);
     await updatePassword(user.id,hashedPassword);
     
@@ -133,9 +153,69 @@ async function changePassword(request,h){
     }).code(201);
 }
 
+async function handleGoogleOauthCallback(request, h) {
+    const { code } = request.query;
+
+    const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            client_id: googleOauthClientId,
+            client_secret: googleOauthClientSecret,
+            code,
+            redirect_uri: `${backendHost}/api/auth/google/callback`,
+            grant_type: 'authorization_code',
+        }),
+    });
+
+    if (!tokenResponse.ok) {
+        console.error("Failed to fetch tokens:", await tokenResponse.text());
+        return h.response("Failed to authenticate with Google").code(400);
+    }
+
+    const tokenData = await tokenResponse.json();
+    const { access_token } = tokenData;
+
+    const userInfoResponse = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+        method: "GET",
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+    });
+
+    if (!userInfoResponse.ok) {
+        console.error("Failed to fetch user info:", await userInfoResponse.text());
+        return h.response("Failed to fetch user details").code(400);
+    }
+
+    const userInfo = await userInfoResponse.json();
+    console.log(userInfo)
+    const user = await upsertUserFromGoogleOauth(userInfo);
+
+    const jwtToken = generateJwt(user);
+    const redirectUrl = `${frontendHost}/auth/google/callback?token=${jwtToken}`;
+
+    return h.redirect(redirectUrl).code(302);
+}
+
+async function upsertUserFromGoogleOauth(user){
+    const newUser = {
+        name:               user.name,
+        email:              user.email,
+        profileImageUrl:    user.picture,
+        googleId:           user.sub,
+        authMethod:         "google"
+    }
+    
+    return await upsertUser(newUser);
+}
+
 module.exports = {
     login,
     register,
     requestResetPassword,
-    changePassword
+    changePassword,
+    handleGoogleOauthCallback
 }

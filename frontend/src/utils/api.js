@@ -1,3 +1,5 @@
+import { deleteToken } from "./localStorage";
+
 const API_URL = import.meta.env.VITE_APP_API_URL;
 
 async function getRequest(endpoint=null,token=null){
@@ -37,7 +39,13 @@ async function makeApiRequest(endpoint=null,method=null, token=null, payload=nul
     try{
 
         const request = await fetch(url,requestOption);
-        return await request.json();
+        const respond = request.json();
+
+        if(respond.error && respond.error === "Authorization token is invalid or expired"){
+            deleteToken();
+        }
+        
+        return respond;
     } 
     catch(err){
 

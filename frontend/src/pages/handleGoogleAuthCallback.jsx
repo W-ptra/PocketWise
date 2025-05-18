@@ -3,7 +3,7 @@ import { saveToken } from "../utils/localStorage";
 
 function HandleGoogleOauthCallback(){
 
-    useEffect(() => {
+  useEffect(() => {
 
     const queryString = window.location.search;
     

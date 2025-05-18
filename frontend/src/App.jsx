@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom"
+import HandleGoogleOauthCallback from "./pages/handleGoogleAuthCallback"
 import RequestChangePassword from "./pages/requestChangePassword"
 import TransactionHistory from "./pages/transactionHitory"
 import ChangePassword from "./pages/changePassword"
@@ -23,6 +24,7 @@ function App() {
         <Route path="/transaction-history" element={ <TransactionHistory/> } />
         <Route path="/analysis" element={ <Analysis/> } />
         <Route path="/profile" element={ <Profile/> } />
+        <Route path="/auth/google/callback" element={ <HandleGoogleOauthCallback/> } />
       </Routes>
     </BrowserRouter>
   )

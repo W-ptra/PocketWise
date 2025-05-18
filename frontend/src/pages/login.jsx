@@ -40,6 +40,8 @@ function Login(){
 
     const login = async () => {
         setErroMessage("");
+        setEmail("");
+        setPassword("");
         handleIsSubmitChange();
 
         const isInputInvalid = isInputsInvalid(
@@ -49,6 +51,7 @@ function Login(){
 
         if(isInputInvalid){
             setErroMessage("Input can't empty");
+            handleIsSubmitChange();
             return
         }
 
@@ -60,6 +63,7 @@ function Login(){
     
             if(respond.error){
                 setErroMessage(respond.error);
+                handleIsSubmitChange();
                 return
             }
             saveToken(respond.token);
@@ -70,9 +74,6 @@ function Login(){
             setErroMessage("something went wrong");
         }
         handleIsSubmitChange();
-
-        setEmail("");
-        setPassword("");
     }
 
     const redirectToGoogleOauth = () => {

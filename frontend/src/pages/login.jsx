@@ -3,6 +3,12 @@ import { isInputsInvalid, redirectIfLogout } from "../utils/validation";
 import { postRequest } from "../utils/api";
 import { saveToken } from "../utils/localStorage";
 
+const googleOauthRedirectLink = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${
+  import.meta.env.VITE_APP_GOOGLE_OAUTH_CLIENT_ID
+}&redirect_uri=${encodeURIComponent(
+  "http://localhost:3000/api/auth/google/callback"
+)}&response_type=code&scope=openid%20email%20profile&access_type=offline&prompt=select_account`;
+
 function Login(){
     const [ email,setEmail ] = useState("");
     const [ password,setPassword ] = useState("");
@@ -67,6 +73,11 @@ function Login(){
 
         setEmail("");
         setPassword("");
+    }
+
+    const redirectToGoogleOauth = () => {
+        window.location.href = googleOauthRedirectLink;
+        return;
     }
 
     const setErroMessage = (message) => {
@@ -138,6 +149,7 @@ function Login(){
                 <div className="flex justify-center">
                     <button
                         className="bg-[#F0F0F0] text-black font-bold w-full py-1.5 rounded cursor-pointer flex justify-center items-center"
+                        onClick={redirectToGoogleOauth}
                     >
                         <img className="w-10 h-6" src="/logo/google.png" alt="" />
                         <p>Google</p>

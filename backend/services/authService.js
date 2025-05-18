@@ -27,15 +27,17 @@ async function login(request,h){
         }).code(400);
     
     const user = await getUserByEmail(email);
-    if (user === null)
+    if (user === null){
         return h.response({
             error:`User with email ${email} is not found`
         }).code(404);
+    }
 
-    if (user.authMethod !== "web")
-         return h.response({
+    if (user.authMethod !== "web"){
+        return h.response({
             error:`User with email ${email} is not found`
         }).code(404);
+    }
 
     const isPasswordMatch = await comparePassword(password,user.password);
     if (!isPasswordMatch)
@@ -191,9 +193,9 @@ async function handleGoogleOauthCallback(request, h) {
     }
 
     const userInfo = await userInfoResponse.json();
-    console.log(userInfo)
+    
     const user = await upsertUserFromGoogleOauth(userInfo);
-
+    console.log(user)
     const jwtToken = generateJwt(user);
     const redirectUrl = `${frontendHost}/auth/google/callback?token=${jwtToken}`;
 

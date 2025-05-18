@@ -41,8 +41,10 @@ async function getUserByEmail(email){
     const where = { email }
     const select = {
         id:         true,
+        googleId:   true,
         email:      true,
         name:       true,
+        authMethod: true,
         password:   true,
     }
     const user = await prisma.user.findFirst({where,select});
@@ -52,9 +54,12 @@ async function getUserByEmail(email){
 async function getUserById(id){
     const where = { id }
     const select = {
-        id:         true,
-        email:      true,
-        name:       true,
+        id:                 true,
+        googleId:           true,
+        email:              true,
+        name:               true,
+        profileImageUrl:    true,
+        authMethod:         true,
     }
     const user = await prisma.user.findFirst({where,select});
     return user;

@@ -2,14 +2,20 @@ const { getUserByEmail, getUserById, updateEmail, updateUser }  = require("../da
 const { isInputInvalid }  = require("../utils/validation");
 
 async function getUserProfile(request,h){
+
+    const user = request.user;
+
+    const getUser = await getUserById(user.id);
+
     return h.response({
         message:`success get user profile`,
         data: {
-            id:                 request.user.id,
-            name:               request.user.name,
-            email:              request.user.email,
-            profileImageUrl:    request.user.profileImageUrl,
-            authMethod:         request.user.authMethod
+            id:                 getUser.id,
+            googleId:           getUser.googleId,
+            name:               getUser.name,
+            email:              getUser.email,
+            profileImageUrl:    getUser.profileImageUrl,
+            authMethod:         getUser.authMethod
         }
     }).code(200);
 }

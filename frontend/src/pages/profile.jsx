@@ -142,9 +142,9 @@ function Profile(){
                         className="flex items-center gap-x-3"
                     >
                         { profileImage ? (
-                            <img className="size-10 bg-gray-200 rounded-full" src={profileImage} alt="" />
+                            <img className="size-16 bg-gray-200 rounded-full" src={profileImage} alt="" />
                         ) : (
-                            <img className="size-10 bg-gray-200 rounded-full" src="/logo/User.png" alt="" />
+                            <img className="size-16 bg-gray-200 rounded-full" src="/logo/User.png" alt="" />
                         )}
                         
                         <div

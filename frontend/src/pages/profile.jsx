@@ -1,4 +1,4 @@
-import { useState,useEffect } from "react";
+import { useState,useEffect,useRef } from "react";
 import { isInputsInvalid,redirectIfLogin } from "../utils/validation";
 import { deleteToken, getToken } from "../utils/localStorage";
 import Back from "../components/back";
@@ -15,7 +15,24 @@ function Profile(){
     const [message, setMessage] = useState("");
     const [messageType, setMessageType] = useState("error");
     const [showMessage, setShowMessage] = useState(false);
+    const [showUploadImage,setShowUplaodImage] = useState(false);
+    const [file,setFile] = useState(null);
+    const fileInputRef = useRef();
 
+    const uploadFile = () => {
+        fileInputRef.current.value = null;
+        fileInputRef.current.click();
+    };
+
+    const handleFileChange = (event) => {
+        const selectedFile = event.target.files[0];
+        if (selectedFile && selectedFile.type.startsWith('image/')) {
+            setFile(selectedFile);
+        } else {
+            alert("Please select a valid image file.");
+        }
+    };
+    
     const handleNameChange = (e) => {
         setName(e.target.value);
     }
@@ -27,6 +44,10 @@ function Profile(){
     const toggleMessage = () => {
         setShowMessage((prev) => !prev);
     };
+
+    const toggleUploadImageWindow = () => {
+        setShowUplaodImage((prev) => !prev);
+    }
 
     redirectIfLogin();
 
@@ -120,6 +141,15 @@ function Profile(){
         }
     }
 
+    const uploadProfile = async () => {
+        const formData = new FormData();
+        formData.append('image', file);
+        const respond = await postRequest("api/user/profile/image",getToken(),formData,true);
+        console.log(respond);
+
+        window.location.reload();
+    }
+
     const handleShowMessage = (message,type) => {
         setShowMessage(true);
         setMessage(message);
@@ -141,11 +171,20 @@ function Profile(){
                     <div
                         className="flex items-center gap-x-3"
                     >
-                        { profileImage ? (
-                            <img className="size-16 bg-gray-200 rounded-full" src={profileImage} alt="" />
-                        ) : (
-                            <img className="size-16 bg-gray-200 rounded-full" src="/logo/User.png" alt="" />
-                        )}
+                        <div
+                            className="relative"
+                        >
+                            { profileImage ? (
+                                <img className="size-16 bg-gray-200 rounded-full" src={profileImage} alt="" />
+                            ) : (
+                                <img className="size-16 bg-gray-200 rounded-full" src="/logo/User.png" alt="" />
+                            )}
+
+                            <img 
+                                className="size-6 p-0.5 bg-gray-400 rounded-full absolute right-0 bottom-0 cursor-pointer hover:bg-gray-300" src="logo/edit.png" alt="" 
+                                onClick={toggleUploadImageWindow}    
+                            />
+                        </div>
                         
                         <div
                             className="flex flex-col"
@@ -249,6 +288,78 @@ function Profile(){
                     </div>
                 </div>
             </div>
+            
+            { showUploadImage && (
+                <div
+                    className="flex justify-center items-center z-50 fixed top-0 bottom-0 left-0 right-0 bg-[rgba(75,85,99,0.5)]"
+                >
+                    <div
+                        className="bg-white rounded w-[40rem] h-[20rem] mb-10 flex flex-col justify-center items-center"
+                    >
+                        { file && (
+                            <div
+                                className="relative"
+                            >
+                                <img
+                                    src={URL.createObjectURL(file)}
+                                    alt="Preview"
+                                    className="max-w-[10rem] max-h-[10rem] bg-gray-100 p-1"
+                                />
+
+                                <img src="/logo/cross.png" alt="" 
+                                    className="bg-gray-500 absolute  size-6 top-0 right-0 cursor-pointer rounded-full"
+                                    onClick={() => { setFile(null) }}
+                                />
+                            </div>
+                        ) }
+
+                        <input
+                            type="file"
+                            accept="image/*"
+                            ref={fileInputRef}
+                            style={{ display: 'none' }}
+                            onChange={handleFileChange}
+                        />
+
+                        { !file ? (
+                            <>
+                                <div
+                                    className="bg-[#00AB6B] px-5 py-2 flex items-center rounded-xl hover:bg-[rgb(109,209,156)] cursor-pointer mb-1 mt-1"
+                                    onClick={uploadFile}
+                                >
+                                    
+                                    <img 
+                                        className="size-10 " 
+                                        src="/logo/addImage.png" alt="" 
+                                        
+                                    />
+                                    <p
+                                        className="text-white font-bold"
+                                    >
+                                        Add Image
+                                    </p>
+                                </div>
+        
+                                <p className="text-[#787878] mt-1">PNG / JPEG / JPG</p>
+                                <p className="text-[#787878]">Max Size 10MB</p>
+                            </>
+                        ) : (
+                            <button
+                                className="mt-2 bg-[#00AB6B] text-white font-bold px-10 py-2 rounded hover:bg-[rgb(109,209,156)] cursor-pointer"
+                                onClick={uploadProfile}
+                            >
+                                Upload
+                            </button>
+                        ) }
+
+                    </div>
+
+                    <img 
+                        className="absolute bottom-5 right-[46%] bg-gray-800 rounded-full hover:bg-gray-700 cursor-pointer" src="/logo/cross.png" alt="" 
+                        onClick={toggleUploadImageWindow}    
+                    />
+                </div>
+            ) }
         </>
     )
 }

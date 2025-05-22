@@ -1,6 +1,12 @@
+import Navbar from "../components/navbar";
+import Footer from "../components/footer";
+
 function Analysis(){
     return (
-        <div></div>
+        <div>
+            <Navbar/>
+            <Footer/>
+        </div>
     )
 }
 

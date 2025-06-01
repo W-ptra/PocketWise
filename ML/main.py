@@ -27,6 +27,11 @@ def journal_route():
 #     return new_controller(request, model, scaler, categories)
 
 if __name__ == '__main__':
+    print("Registered routes:")
+    for rule in app.url_map.iter_rules():
+        methods = ','.join(sorted(rule.methods - {'HEAD', 'OPTIONS'}))
+        print(f"{methods:10s} {rule.endpoint:20s} -> {rule.rule}")
+
     host = os.getenv('HOST', '127.0.0.1')
     port = int(os.getenv('PORT', 5000))
     app.run(host=host, port=port, debug=False)

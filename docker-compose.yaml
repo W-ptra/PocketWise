@@ -30,6 +30,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: frontend-capstone
+    depends_on:
+      - backend
+      - frontend
     ports:
       - "4000:80"
     networks:
@@ -57,6 +60,35 @@ services:
     networks:
       - capstone_network
 
+  ml:
+    # warning! build can take longer time, as it required bigger library ex: tensor flow to be download
+    # and the container size can exceed 2GB+
+    # build:
+    #   context: ./ML
+    #   dockerfile: Dockerfile
+
+    # instead can pull and use image that has been build by author
+    image: wisnup001binus/ml_capstone:1.0
+
+    container_name: ml-capstone
+    environment:
+      HOST: "0.0.0.0"
+      PORT: 80
+    ports:
+      - "3005:80"
+    networks:
+      - capstone_network
+
+  nginx:
+    container_name: nginx-router-capstone
+    build:
+      context: ./"nginx router"
+      dockerfile: Dockerfile
+    ports:
+      - "1000:80"
+    networks:
+      - capstone_network
+    
 networks:
   capstone_network:
     driver: bridge

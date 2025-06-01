@@ -3,20 +3,48 @@ const prisma = new PrismaClient;
 
 async function createUser(user){
     const data = {
-        name:       user.name,
-        email:      user.email,
-        password:   user.password
+        name:               user.name,
+        email:              user.email,
+        password:           user.password,
+        profileImageUrl:    user.profileImageUrl,
+        authMethod:         user.authMethod
     }
     const newUser = await prisma.user.create({ data });
     return newUser;
+}
+
+async function upsertUser(user) {
+    const data = {
+        name: user.name,
+        email: user.email,
+        googleId: user.googleId,
+        profileImageUrl: user.profileImageUrl,
+        authMethod: user.authMethod 
+    };
+    try{
+        const upsertedUser = await prisma.user.upsert({
+            where: {
+                googleId: user.googleId
+            },
+            update: data,
+            create: data,
+        });
+    
+        return upsertedUser;
+    }
+    catch(err){
+        console.log(err)
+    }
 }
 
 async function getUserByEmail(email){
     const where = { email }
     const select = {
         id:         true,
+        googleId:   true,
         email:      true,
         name:       true,
+        authMethod: true,
         password:   true,
     }
     const user = await prisma.user.findFirst({where,select});
@@ -26,9 +54,12 @@ async function getUserByEmail(email){
 async function getUserById(id){
     const where = { id }
     const select = {
-        id:         true,
-        email:      true,
-        name:       true,
+        id:                 true,
+        googleId:           true,
+        email:              true,
+        name:               true,
+        profileImageUrl:    true,
+        authMethod:         true,
     }
     const user = await prisma.user.findFirst({where,select});
     return user;
@@ -58,6 +89,18 @@ async function updateEmail(id,email){
     return user;
 }
 
+async function updateUserProfileImage(id,url){
+    const where = { id };
+    const data = { 
+        profileImageUrl: url
+    }
+    const user = await prisma.user.update({
+        where,
+        data
+    })
+    return user;
+}
+
 async function updatePassword(id,password){
      const where = { id };
     const data = { 
@@ -72,9 +115,11 @@ async function updatePassword(id,password){
 
 module.exports = {
     createUser,
+    upsertUser,
     getUserByEmail,
     getUserById,
     updateUser,
     updateEmail,
+    updateUserProfileImage,
     updatePassword
 }

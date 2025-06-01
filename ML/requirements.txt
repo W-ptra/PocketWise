@@ -1,0 +1,6 @@
+tensorflow==2.18.0
+joblib==1.5.0
+numpy==2.0.2
+flask==2.3.3
+scikit-learn==1.6.1
+python-dotenv==1.1.0

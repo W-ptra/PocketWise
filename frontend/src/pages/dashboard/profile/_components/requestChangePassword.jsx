@@ -1,10 +1,12 @@
-import { useState,useEffect } from "react";
-import { isInputsInvalid, redirectIfLogout } from "../../../../utils/validation";
-import { postRequest } from "../../../../utils/api";
+import { useState, useEffect } from "react";
+import { isInputsInvalid, redirectIfLogout } from "~utils/validation";
+import { postRequest } from "~utils/api";
+import { Mail, Undo2 } from "lucide-react";
 
-function RequestChangePassword(){
-    const [ email,setEmail ] = useState("");
-    const [ isSubmit,setIsSubmit ] = useState(false);
+function RequestChangePassword() {
+    const [email, setEmail] = useState("");
+    const [isSubmit, setIsSubmit] = useState("");
+    const [linkSent, setLinkSent] = useState(false);
 
     redirectIfLogout();
 
@@ -18,97 +20,133 @@ function RequestChangePassword(){
 
     useEffect(() => {
         const button = document.getElementById("buttonSubmit");
-
-        if(isSubmit){
+        if (isSubmit) {
             button.disabled = true;
             return;
         }
-
         button.disabled = false;
     }, [isSubmit]);
 
     const requestResetLink = async () => {
         setErroMessage("");
-        setEmail("");
         handleIsSubmitChange();
 
-        const isInputInvalid = isInputsInvalid(
-            email
-        );
+        const isInputInvalid = isInputsInvalid(email);
 
-        if(isInputInvalid){
-            setErroMessage("Input can't empty");
+        if (isInputInvalid) {
+            setErroMessage("Please enter your email address");
             handleIsSubmitChange();
-            return
+            return;
         }
-        try{
-            const respond = await postRequest("api/auth/request-reset-password",null,{
-                email
+
+        try {
+            const respond = await postRequest("api/auth/request-reset-password", null, {
+                email,
             });
-    
-            if(respond.error){
+
+            if (respond.error) {
                 setErroMessage(respond.error);
                 handleIsSubmitChange();
-                return
+                return;
             }
-    
-            setLinkMessage(respond.message)
-        }
-        catch(err){
+
+            setLinkSent(true);
+            setLinkMessage(respond.message);
+            setEmail("");
+        } catch (err) {
             console.log(err);
-            setErroMessage("something went wrong");
+            setErroMessage("Something went wrong. Please try again.");
         }
         handleIsSubmitChange();
-    }
+    };
 
     const setErroMessage = (message) => {
         document.getElementById("errorMessage").innerText = message;
-    }
+    };
 
     const setLinkMessage = (message) => {
         document.getElementById("linkMessage").innerText = message;
-    }
+    };
 
     return (
-        <div
-            className="flex justify-center fixed top-0 bottom-0 left-0 right-0 mt-[10vh]"
-        >
-            <div
-                className="bg-white flex flex-col justify-center p-10 m-5 gap-y-3 rounded h-[15rem] pb-12"
-            >
-                <div className="flex justify-center">
-                    <h1 className="text-[#00AB6B] font-bold text-[1.5rem]">
-                        Forget Password
-                    </h1>
-                </div>
-                <div className="flex justify-center">
-                    <input 
-                        className="bg-[#F0F0F0] p-1 pl-4 border-2 w-[20rem] border-white  outline-none rounded-md" 
-                        type="text" placeholder="Email"
-                        onChange={handleEmailChange}
-                        value={email}        
-                    />
-                </div>
-                <p 
-                    id="errorMessage" className="text-red-500 text-center"
+        <div className="min-h-screen bg-gradient-to-br from-[#f8fdfb] to-[#e6f5ef] flex justify-center items-center px-4">
+            <div className="absolute top-4 left-4">
+                <a
+                    href="/login"
+                    className="text-gray-400 text-sm flex items-center gap-2 hover:text-gray-600 transition-colors duration-200"
                 >
-                </p>
-                <div className="flex justify-center">
-                    <button
-                        className="bg-[#00AB6B] text-white font-bold w-full py-1 rounded hover:bg-[#00CF81] cursor-pointer"
-                        onClick={requestResetLink}
-                        id="buttonSubmit"
+                    <Undo2 className="h-5 w-5" />
+                    Back to Login
+                </a>
+            </div>
+
+            <div className="bg-white w-full max-w-md p-8 rounded-2xl shadow-lg transform transition-all duration-300 hover:shadow-xl">
+                {/* Logo and Title Section */}
+                <div className="text-center mb-8">
+                    <div className="flex items-center justify-center mb-2">
+                        <img
+                            src="/logo/pocket-wise-logo.jpg"
+                            alt="PocketWise Logo"
+                            className="h-12 w-auto rounded-full"
+                        />
+                    </div>
+                    <h1 className="text-[#00AB6B] font-bold text-2xl">Reset Password</h1>
+                    <p className="text-gray-600 text-sm mt-2">
+                        Enter your email and we'll send you a reset link
+                    </p>
+                </div>
+
+                {/* Input Field */}
+                <div className="space-y-4">
+                    <div className="relative">
+                        <input
+                            className="w-full pl-11 pr-4 py-3 bg-[#F8F8F8] border border-gray-200 rounded-lg focus:border-[#00AB6B] focus:ring-1 focus:ring-[#00AB6B] transition-all duration-200 outline-none placeholder:text-gray-400"
+                            type="email"
+                            placeholder="Enter your email"
+                            onChange={handleEmailChange}
+                            value={email}
+                        />
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                            <Mail className="h-5 w-5" />
+                        </span>
+                    </div>
+                </div>
+
+                {/* Error Message */}
+                <p id="errorMessage" className="text-red-500 text-center text-sm mt-2"></p>
+
+                {/* Success Message */}
+                <div className="mt-2">
+                    <p
+                        id="linkMessage"
+                        className={`text-center text-sm ${
+                            linkSent ? "text-green-600" : "text-black"
+                        }`}
+                    ></p>
+                </div>
+
+                {/* Submit Button */}
+                <button
+                    className="w-full mt-6 bg-[#00AB6B] text-white font-semibold py-3 rounded-lg hover:bg-[#00CF81] transform transition-all duration-200 hover:scale-[1.02] focus:ring-2 focus:ring-[#00AB6B] focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    onClick={requestResetLink}
+                    id="buttonSubmit"
+                >
+                    Send Reset Link
+                </button>
+
+                {/* Help Text */}
+                <p className="text-center text-gray-500 text-sm mt-4">
+                    Remember your password?{" "}
+                    <a
+                        href="/login"
+                        className="text-[#00AB6B] hover:text-[#00CF81] font-medium transition-colors duration-200"
                     >
-                        Send reset link
-                    </button>
-                </div>
-                <p 
-                    id="linkMessage" className="text-black text-center"
-                >
+                        Sign in
+                    </a>
                 </p>
             </div>
         </div>
-    )
+    );
 }
 
 export default RequestChangePassword;

@@ -2,6 +2,12 @@ import { isInputsInvalid,isPasswordAndConfirmPasswordNotMatch, redirectIfLogout 
 import { useState,useEffect } from "react";
 import { postRequest } from "../utils/api";
 
+const googleOauthRedirectLink = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${
+  import.meta.env.VITE_APP_GOOGLE_OAUTH_CLIENT_ID
+}&redirect_uri=${encodeURIComponent(
+  "http://localhost:3000/api/auth/google/callback"
+)}&response_type=code&scope=openid%20email%20profile&access_type=offline&prompt=select_account`;
+
 function Register(){
     const [ name,setName ] = useState("");
     const [ email,setEmail ] = useState("");
@@ -41,6 +47,11 @@ function Register(){
 
         button.disabled = false;
     }, [isSubmit]);
+
+    const redirectToGoogleOauth = () => {
+        window.location.href = googleOauthRedirectLink;
+        return;
+    }
 
     const register = async () => {
         setErroMessage("");
@@ -180,6 +191,7 @@ function Register(){
                 <div className="flex justify-center">
                     <button
                         className="bg-[#F0F0F0] text-black font-bold w-full py-1.5 rounded cursor-pointer flex justify-center items-center"
+                        onClick={redirectToGoogleOauth}
                     >
                         <img className="w-10 h-6" src="/logo/google.png" alt="" />
                         <p>Google</p>

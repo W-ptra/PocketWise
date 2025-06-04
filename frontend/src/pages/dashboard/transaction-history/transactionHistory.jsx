@@ -1,36 +1,42 @@
 import React, { useState } from 'react';
 import Navbar from "../../../components/navbar";
 import Footer from "../../../components/footer";
+import { postRequest } from "../../../utils/api";
+import { getToken } from "../../../utils/localStorage";
 
 const allowedTransactionType = [
-    "Eating_Out",
-    "Entertainment",
-    "Groceries",
-    "Healthcare",
-    "Insurance",
-    "Loan_Repayment",
-    "Rent",
-    "Transport",
-    "Utilities"
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11"
 ];
 
 function TransactionHistory(){
     const [inputRows, setInputRows] = useState([
-        { id: 0, amount: '', title: '', transactionType: 'Groceries', dateTime: new Date() },
+        { id: 0, amount: '', title: '', transactionTypeId: 'Groceries', createdAt: new Date().toISOString().split("T")[0]},
     ]);
     const [nextId, setNextId] = useState(1);
     const [isError, setIsError] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+    const [isSuccessMessage, setIsSuccessMessage] = useState("");
+    const [successMessage,setSuccessMessage] = useState("");
 
     const addInputRow = () => {
-        const newRow = { id: nextId, amount: '', title: '', transactionType: 'Groceries', dateTime: new Date() };
+        const newRow = { id: nextId, amount: '', title: '', transactionType: 'Groceries', dateTime: new Date().toISOString().split("T")[0]};
         setInputRows(prevRows => [...prevRows, newRow]);
         setNextId(prevId => prevId + 1);
     };
 
     const handleInputChange = (id, event) => {
         const { name, value } = event.target;
-        console.log(name,value);
+        console.log(id,name,value);
         setInputRows(prevRows =>
             prevRows.map(row =>
                 row.id === id ? { ...row, [name]: value } : row
@@ -44,21 +50,22 @@ function TransactionHistory(){
         setInputRows(prevRows => prevRows.filter(row => row.id !== id));
     };
 
-    const insertTransaction = () => {
+    const insertTransaction = async () => {
         setIsError(false);
+        setIsSuccessMessage(false);
         if(inputRows.length === 0){
             setIsError(true);
             setErrorMessage("transaction can't empty");
             return;
         }
 
-        console.log(inputRows)
+        console.log(inputRows);
 
         inputRows.forEach( transaction => {
             const amount = transaction.amount;
             const title = transaction.title;
-            const transactionType = transaction.transactionType;
-            const dateTime = transaction.dateTime;
+            const transactionType = transaction.transactionTypeId;
+            const dateTime = transaction.createdAt;
 
             if(
                 amount.length === 0 || title.length === 0 || transactionType.length === 0 || dateTime.length === 0
@@ -89,8 +96,21 @@ function TransactionHistory(){
             }
             
         } );
-     
+        
+        const payload = {
+            transactions: inputRows
+        }
+        const result = await postRequest("api/transaction",getToken(),payload);
 
+        if(result.error){
+            setIsError(true);
+            setErrorMessage(result.error);
+            return;
+        }
+
+        setInputRows([{ id: nextId, amount: '', title: '', transactionTypeId: 1, createdAt: new Date() }]);
+        setIsSuccessMessage(true);
+        setSuccessMessage(result.message);
     }
 
 
@@ -129,7 +149,7 @@ function TransactionHistory(){
                                     <input
                                         type="number"
                                         min="1"
-                                        max="99999999999999999999"
+                                        max="9999999999999999"
                                         className="rounded border px-2 py-1"
                                         placeholder="Rp."
                                         name="amount"
@@ -146,26 +166,28 @@ function TransactionHistory(){
                                     />
                                     <select
                                         className="rounded border px-2 py-1"
-                                        name="transactionType"
-                                        value={row.transactionType}
+                                        name="transactionTypeId"
+                                        value={row.transactionTypeId}
                                         onChange={(e) => handleInputChange(row.id, e)}
                                         >
-                                        <option value="Eating_Out">Eating_Out</option>
-                                        <option value="Entertainment">Entertainment</option>
-                                        <option value="Groceries">Groceries</option>
-                                        <option value="Healthcare">Healthcare</option>
-                                        <option value="Insurance">Insurance</option>
-                                        <option value="Loan_Repayment">Loan_Repayment</option>
-                                        <option value="Rent">Rent</option>
-                                        <option value="Transport">Transport</option>
-                                        <option value="Utilities">Utilities</option>
+                                        <option value="1">Income</option>
+                                        <option value="2">Rent</option>
+                                        <option value="3">Loan_Repayment</option>
+                                        <option value="4">Insurance</option>
+                                        <option value="5">Groceries</option>
+                                        <option value="6">Transport</option>
+                                        <option value="7">Eating_Out</option>
+                                        <option value="8">Entertainment</option>
+                                        <option value="9">Utilities</option>
+                                        <option value="10">Healthcare</option>
+                                        <option value="11">Education</option>
                                     </select>
 
                                     <input
                                         type="date"
                                         className="rounded border px-2 py-1"
                                         placeholder=""
-                                        name="dateTime"
+                                        name="createdAt"
                                         value={row.dateTime}
                                         onChange={(e) => handleInputChange(row.id, e)}
                                     />
@@ -199,6 +221,10 @@ function TransactionHistory(){
 
                     { isError && (
                         <p className='text-center text-red-500 mt-2'>{errorMessage}</p>
+                    )}
+                    
+                    { isSuccessMessage && (
+                        <p className='text-center text-black mt-4'>{successMessage}</p>
                     )}
                 </div>
 

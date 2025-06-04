@@ -1,6 +1,8 @@
-import { isInputsInvalid,isPasswordAndConfirmPasswordNotMatch, redirectIfLogout } from "../../utils/validation";
-import { useState,useEffect } from "react";
-import { postRequest } from "../../utils/api";
+import { isInputsInvalid, isPasswordAndConfirmPasswordNotMatch, redirectIfLogout } from "~utils/validation";
+import { useState, useEffect } from "react";
+import { postRequest } from "~utils/api";
+import { Mail, Lock, User, Undo2 } from "lucide-react";
+import { FaGoogle } from "react-icons/fa";
 
 const googleOauthRedirectLink = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${
   import.meta.env.VITE_APP_GOOGLE_OAUTH_CLIENT_ID
@@ -8,12 +10,12 @@ const googleOauthRedirectLink = `https://accounts.google.com/o/oauth2/v2/auth?cl
   "http://localhost:3000/api/auth/google/callback"
 )}&response_type=code&scope=openid%20email%20profile&access_type=offline&prompt=select_account`;
 
-function Register(){
-    const [ name,setName ] = useState("");
-    const [ email,setEmail ] = useState("");
-    const [ password,setPassword ] = useState("");
-    const [ confirmPassword,setConfirmPassword ] = useState("");
-    const [ isSubmit,setIsSubmit ] = useState(false);
+function Register() {
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [isSubmit, setIsSubmit] = useState(false);
 
     redirectIfLogout();
 
@@ -111,95 +113,125 @@ function Register(){
     }
 
     return (
-        <div
-            className="flex justify-center fixed top-0 bottom-0 left-0 right-0 mt-[10vh]"
-        >
-            <div
-                className="bg-white flex flex-col justify-center p-10 m-5 gap-y-3 rounded h-[30rem]"
-            >
-                <div className="flex justify-center">
-                    <h1 className="text-[#00AB6B] font-bold text-[1.5rem]">
-                        PocketWise
-                    </h1>
+        <>
+            <div className="min-h-screen bg-gradient-to-br from-[#f8fdfb] to-[#e6f5ef] flex justify-center items-center px-4">
+                <div className="absolute top-4 left-4">
+                    <span
+                        className="text-gray-400 text-sm flex items-center gap-2 cursor-pointer"
+                        onClick={() => (window.location.href = "/")}
+                    >
+                        <Undo2 className="h-5 w-5" />
+                        Back
+                    </span>
                 </div>
-                <div className="flex justify-center">
-                    <input 
-                        className="bg-[#F0F0F0] p-1 pl-4 border-2 w-[20rem] border-white  outline-none rounded-md" 
-                        type="text" placeholder="Name"
-                        onChange={handleNameChange}
-                        value={name}
-                    />
-                </div>
-                <div className="flex justify-center">
-                    <input 
-                        className="bg-[#F0F0F0] p-1 pl-4 border-2 w-[20rem] border-white  outline-none rounded-md" 
-                        type="text" placeholder="Email"
-                        onChange={handleEmailChange}
-                        value={email}    
-                    />
-                </div>
-                <div className="flex justify-center">
-                    <input 
-                        className="bg-[#F0F0F0] p-1 pl-4 border-2 w-[20rem] border-white  outline-none rounded-md" 
-                        type="password" placeholder="Password"
-                        onChange={handlePasswordChange}
-                        value={password}
-                    />
-                </div>
-                <div className="flex justify-center">
-                    <input 
-                        className="bg-[#F0F0F0] p-1 pl-4 border-2 w-[20rem] border-white  outline-none rounded-md" 
-                        type="password" placeholder="Confirm password"
-                        onChange={handleConfirmPasswordChange}
-                        value={confirmPassword}    
-                    />
-                </div>
-                
-                <p 
-                    id="errorMessage" className="text-red-500 text-center"
-                >
-                </p>
+                <div className="bg-white w-full max-w-md p-8 rounded-2xl shadow-lg transform transition-all duration-300 hover:shadow-xl">
+                    {/* Logo and Title Section */}
+                    <div className="text-center mb-8">
+                        <div className="flex items-center justify-center mb-2">
+                            <img
+                                src="/logo/pocket-wise-logo.jpg"
+                                alt="PocketWise Logo"
+                                className="h-12 w-auto rounded-full"
+                            />
+                        </div>
+                        <h1 className="text-[#00AB6B] font-bold text-2xl">Create Account</h1>
+                        <p className="text-gray-600 text-sm mt-2">
+                            Join us to manage your finances wisely
+                        </p>
+                    </div>
 
-                <div className="flex justify-center">
+                    {/* Input Fields */}
+                    <div className="space-y-4">
+                        <div className="relative">
+                            <input 
+                                className="w-full pl-11 pr-4 py-3 bg-[#F8F8F8] border border-gray-200 rounded-lg focus:border-[#00AB6B] focus:ring-1 focus:ring-[#00AB6B] transition-all duration-200 outline-none placeholder:text-gray-400"
+                                type="text"
+                                placeholder="Name"
+                                onChange={handleNameChange}
+                                value={name}
+                            />
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                <User className="h-5 w-5" />
+                            </span>
+                        </div>
+
+                        <div className="relative">
+                            <input 
+                                className="w-full pl-11 pr-4 py-3 bg-[#F8F8F8] border border-gray-200 rounded-lg focus:border-[#00AB6B] focus:ring-1 focus:ring-[#00AB6B] transition-all duration-200 outline-none placeholder:text-gray-400"
+                                type="text"
+                                placeholder="Email"
+                                onChange={handleEmailChange}
+                                value={email}
+                            />
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                <Mail className="h-5 w-5" />
+                            </span>
+                        </div>
+
+                        <div className="relative">
+                            <input 
+                                className="w-full pl-11 pr-4 py-3 bg-[#F8F8F8] border border-gray-200 rounded-lg focus:border-[#00AB6B] focus:ring-1 focus:ring-[#00AB6B] transition-all duration-200 outline-none placeholder:text-gray-400"
+                                type="password"
+                                placeholder="Password"
+                                onChange={handlePasswordChange}
+                                value={password}
+                            />
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                <Lock className="h-5 w-5" />
+                            </span>
+                        </div>
+
+                        <div className="relative">
+                            <input 
+                                className="w-full pl-11 pr-4 py-3 bg-[#F8F8F8] border border-gray-200 rounded-lg focus:border-[#00AB6B] focus:ring-1 focus:ring-[#00AB6B] transition-all duration-200 outline-none placeholder:text-gray-400"
+                                type="password"
+                                placeholder="Confirm password"
+                                onChange={handleConfirmPasswordChange}
+                                value={confirmPassword}
+                            />
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                <Lock className="h-5 w-5" />
+                            </span>
+                        </div>
+                    </div>
+
+                    <p id="errorMessage" className="text-red-500 text-center text-sm mt-2"></p>
+
+                    {/* Register Button */}
                     <button
-                        className="bg-[#00AB6B] text-white font-bold w-full py-1 rounded hover:bg-[#00CF81] cursor-pointer"
+                        className="w-full mt-6 bg-[#00AB6B] text-white font-semibold py-3 rounded-lg hover:bg-[#00CF81] transform transition-all duration-200 hover:scale-[1.02] focus:ring-2 focus:ring-[#00AB6B] focus:ring-opacity-50"
                         onClick={register}
                         id="buttonSubmit"
                     >
-                        Register
+                        Create Account
                     </button>
-                </div>
-                <div className="flex justify-between text-[#00AB6B] font-bold text-[0.9rem]">
-                    <a href="/login">
-                        <p>Sign in</p>
-                    </a>
-                    
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                    <div className="flex-1 border-[0.05rem] border-t border-gray-300">
 
+                    {/* Links */}
+                    <div className="flex justify-center text-sm mt-4 text-[#00AB6B] font-medium">
+                        <a href="/login" className="hover:text-[#00CF81] transition-colors duration-200">
+                            Already have an account? Sign in
+                        </a>
                     </div>
-                        <div>
-                            <p className="text-[#B9B9B9] text-sm whitespace-nowrap">
-                            Or continue with
-                            </p>
-                        </div>
-                    <div className="flex-1 border-[0.05rem] border-t border-gray-300">
-                        
+
+                    {/* Divider */}
+                    <div className="flex items-center my-6">
+                        <div className="flex-1 border-t border-gray-200"></div>
+                        <span className="px-4 text-sm text-gray-500">or continue with</span>
+                        <div className="flex-1 border-t border-gray-200"></div>
                     </div>
-                </div>
-                <div className="flex justify-center">
+
+                    {/* Google Sign In */}
                     <button
-                        className="bg-[#F0F0F0] text-black font-bold w-full py-1.5 rounded cursor-pointer flex justify-center items-center"
                         onClick={redirectToGoogleOauth}
+                        className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 font-medium py-3 rounded-lg hover:bg-gray-50 transition-all duration-200 hover:shadow-md cursor-pointer"
                     >
-                        <img className="w-10 h-6" src="/logo/google.png" alt="" />
-                        <p>Google</p>
+                        <FaGoogle className="h-5 w-5" />
+                        <span>Sign up with Google</span>
                     </button>
                 </div>
             </div>
-        </div>
-    )
+        </>
+    );
 }
 
 export default Register;

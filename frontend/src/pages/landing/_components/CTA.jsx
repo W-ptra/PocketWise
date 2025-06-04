@@ -16,9 +16,11 @@ function CTA() {
             Join thousands of users who have improved their financial health with PocketWise.
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <button className="bg-white text-[#00AB6B] px-8 py-3 rounded-full font-semibold hover:bg-[#EAEAEA] transition-all duration-300 hover:scale-105 hover:shadow-lg w-full sm:w-auto">
-              Sign Up Free
-            </button>
+            <a href="/register">
+              <button className="bg-white text-[#00AB6B] px-8 py-3 rounded-full font-semibold hover:bg-[#EAEAEA] transition-all duration-300 hover:scale-105 hover:shadow-lg w-full sm:w-auto cursor-pointer">
+                Sign Up Free
+              </button>
+            </a>
             <button className="border-2 border-white text-white px-8 py-3 rounded-full font-semibold hover:bg-white/10 transition-all duration-300 w-full sm:w-auto">
               Schedule a Demo
             </button>

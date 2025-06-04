@@ -5,64 +5,88 @@ function Analysis(){
     return (
         <div>
             <Navbar/>
-            <div className="flex min-h-screen flex-col bg-gray-100">
+            <div className=" flex flex-col bg-gray-100 mx-10 mb-5">
                 <div className="mt-10 flex flex-col items-center justify-center gap-y-7">
-                    <div className="flex w-[110rem] flex-col justify-center gap-y-3 rounded bg-white px-5 py-5 shadow-md">
-                        <div className="flex justify-center">
-                            <h1 className="text-[1.5rem] font-bold text-[#00AB6B]">Analisa Bulanan</h1>
-                        </div>
+                    <div className="flex  flex-col justify-center gap-y-3 rounded bg-white px-5 py-5 shadow-md w-full">
+                        <h1 className="text-[1.5rem] font-bold text-[#00AB6B] text-center">Analisa Bulanan</h1>
                     </div>
 
-                    <div className="flex w-[110rem] flex-col justify-center gap-y-3 rounded bg-white px-5 py-5 space-y-4 shadow-md">
+                    <div className="flex flex-col justify-center gap-y-5 rounded bg-white px-5 py-5 shadow-md w-full">
                         <div className="flex flex-col">
                             <div className="justify-left flex">
                                 <h2 className="text-[1.2rem] font-medium text-[#00AB6B]">Januari 2025</h2>
                             </div>
                             <div className="flex-1 border-[0.05rem] border-t border-gray-300"></div>
                             <div className="justify-right flex flex-col">
-                                <h2 className="text-[1.1rem] font-medium mt-4 mb-4 text-[#000000]">
-                                    Pada bulan Januari pengeluaran kamu sangat irit.
-                                </h2>
-                                <h2 className="text-[1rem] text-[#000000]">
-                                    Pada bulan Januari, kamu berhasil mengelola keuangan dengan sangat baik. Pengeluaran tercatat lebih rendah dari rata-rata bulan sebelumnya, menunjukkan bahwa kamu berhasil menekan pengeluaran yang tidak perlu. Kemungkinan besar kamu lebih fokus pada kebutuhan pokok dan menghindari pembelian impulsif. Ini bisa menjadi indikasi bahwa kamu memulai tahun dengan semangat penghematan atau ada tujuan keuangan tertentu yang sedang kamu kejar, seperti menabung untuk investasi atau kebutuhan jangka panjang.
-                                </h2>
+                                <ul className="flex flex-col gap-y-1 mt-3">
+                                    <li>• Pengeluaranmu untuk Rent cukup rendah (Str18.2% vs saran 27.7%). Boleh dipertimbangkan naik hingga Rp6,093,291.</li>
+                                    <li>• Kamu terlalu banyak mengeluarkan uang di Loan_Repayment (2.7% vs saran 1.3%). Idealnya kamu bisa hemat sekitar Rp314,557.</li>
+                                    <li>• Pengeluaranmu untuk Insurance cukup rendah (1.4% vs saran 4.9%). Boleh dipertimbangkan naik hingga Rp1,067,360.</li>
+                                    <li>• Pengeluaranmu untuk Groceries cukup rendah (9.1% vs saran 12.4%). Boleh dipertimbangkan naik hingga Rp2,717,884.</li>
+                                    <li>• Pengeluaranmu untuk Transport cukup rendah (2.3% vs saran 7.6%). Boleh dipertimbangkan naik hingga Rp1,662,562.</li>
+                                    <li>• Kamu terlalu banyak mengeluarkan uang di Eating_Out (9.1% vs saran 5.0%). Idealnya kamu bisa hemat sekitar Rp900,153.</li>
+                                    <li>• Pengeluaranmu untuk Entertainment cukup rendah (0.9% vs saran 5.0%). Boleh dipertimbangkan naik hingga Rp1,099,717.</li>
+                                    <li>• Pengeluaranmu untuk Utilities cukup rendah (0.2% vs saran 4.2%). Boleh dipertimbangkan naik hingga Rp920,922.</li>
+                                    <li>• Pengeluaranmu untuk Healthcare cukup rendah (0.5% vs saran 4.9%). Boleh dipertimbangkan naik hingga Rp1,079,028.</li>
+                                    <li>• Kamu terlalu banyak mengeluarkan uang di Education (0.5% vs saran 0.0%). Idealnya kamu bisa hemat sekitar Rp99,994.</li>
+                                </ul>
                             </div>
                         </div>
-                        <div className="w-full flex border-[0.05rem] border-t border-gray-300"></div>
-                        <div>
-                            <div className="justify-left flex">
-                                <h2 className="text-[1.2rem] font-medium text-[#00AB6B]">Februari 2025</h2>
-                            </div>
-                            <div className="flex-1 border-[0.05rem] border-t border-gray-300"></div>
-                            <div className="justify-right flex flex-col">
-                                <h2 className="text-[1.1rem] font-medium mt-4 mb-4 text-[#000000]">
-                                Pada bulan Februari pengeluaran kamu sangat boros.
-                                </h2>
-                                <h2 className="text-[1rem] text-[#000000]">
-                                Hal ini menunjukkan bahwa terdapat peningkatan signifikan dalam jumlah pengeluaran dibanding bulan sebelumnya. Kemungkinan besar terjadi pembelian yang tidak direncanakan, peningkatan konsumsi gaya hidup, atau pengeluaran untuk kebutuhan sekunder yang tidak terlalu mendesak. Kamu mungkin tidak memantau anggaran secara ketat atau terlalu banyak menggunakan metode pembayaran non-tunai, seperti kartu kredit atau e-wallet, yang membuat pengeluaran terasa tidak langsung. Disarankan untuk mengevaluasi kembali daftar pengeluaran, mengidentifikasi pos-pos yang bisa dikurangi, serta mulai kembali mencatat setiap pengeluaran harian agar kamu bisa kembali ke jalur keuangan yang sehat di bulan berikutnya.
-                                </h2>
-                            </div>
-                        </div>
-                        <div className="flex border-[0.05rem] border-t border-gray-300"></div>
-                        <div>
-                            <div className="justify-left flex">
-                                <h2 className="text-[1.2rem] font-medium text-[#00AB6B]">Maret 2025</h2>
-                            </div>
-                            <div className="flex-1 border-[0.05rem] border-t border-gray-300"></div>
-                            <div className="justify-right flex">
-                                <h2 className="text-[1rem] text-[#000000]">Pada bulan Maret pengeluaran kamu normal.</h2>
-                            </div>
-                        </div>
+
                     </div>
 
-                    <div className="flex w-[110rem] flex-col justify-center gap-y-3 rounded bg-white px-5 py-5 shadow-md">
+                    <div className="flex flex-col justify-center gap-y-3 rounded bg-white px-5 py-5 shadow-md w-full">
+                        <h2 className="text-[1.5rem] font-bold text-[#00AB6B] text-center">Analisa Harian</h2>
+                    </div>
+
+                    <div className="flex flex-col justify-center gap-y-3 rounded bg-white px-5 py-5 shadow-md w-full mb-5 gap-x-1">
                         <div className="grid grid-cols-[2fr_1fr] w-full">
                             <div className="flex justify-center">
-                                <h2 className="text-[1.5rem] font-bold text-[#00AB6B]">Rekomendasi Harian</h2>
+                                <h2 className="text-[1.5rem] font-bold text-[#00AB6B]">Rekomendasi</h2>
                             </div>
                             <div className="flex justify-center">
-                                <h2 className="text-[1.5rem] font-bold text-[#00AB6B]">Hari/Tanggal</h2>
+                                <h2 className="text-[1.5rem] font-bold text-[#00AB6B]">Hari,Tanggal</h2>
                             </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-[2fr_1fr] w-full border-[0.1rem] border-white border-t-[#787878] pt-1 gap-x-1">
+                           <div 
+                            className="flex flex-row justify-center items-center"
+                           >
+                                Lorem ipsum, dolor sit amet consectetur adipisicing elit. Voluptatibus ab fugit cumque nemo possimus eaque libero magni placeat voluptatum ducimus? Ut unde minima magni molestiae, placeat porro omnis obcaecati alias.
+                           </div>
+                           <div
+                            className="flex flex-row justify-center items-center"
+                           >
+                                Lorem ipsum dolor sit amet consectetur adipisicing elit. Distinctio officia eligendi perferendis voluptate fugiat eius, error soluta et nihil vel ratione, dolore hic aut ipsa quod impedit autem quos nesciunt.
+                           </div>
+                           
+                        </div>
+                        <div className="grid grid-cols-[2fr_1fr] w-full border-[0.1rem] border-white border-t-[#787878] pt-1 gap-x-1">
+                           <div 
+                            className="flex flex-row justify-center items-center"
+                           >
+                                Lorem ipsum, dolor sit amet consectetur adipisicing elit. Voluptatibus ab fugit cumque nemo possimus eaque libero magni placeat voluptatum ducimus? Ut unde minima magni molestiae, placeat porro omnis obcaecati alias.
+                           </div>
+                           <div
+                            className="flex flex-row justify-center items-center"
+                           >
+                                Lorem ipsum dolor sit amet consectetur adipisicing elit. Distinctio officia eligendi perferendis voluptate fugiat eius, error soluta et nihil vel ratione, dolore hic aut ipsa quod impedit autem quos nesciunt.
+                           </div>
+                           
+                        </div>
+                        <div className="grid grid-cols-[2fr_1fr] w-full border-[0.1rem] border-white border-t-[#787878] pt-1 gap-x-1">
+                           <div 
+                            className="flex flex-row justify-center items-center"
+                           >
+                                Lorem ipsum, dolor sit amet consectetur adipisicing elit. Voluptatibus ab fugit cumque nemo possimus eaque libero magni placeat voluptatum ducimus? Ut unde minima magni molestiae, placeat porro omnis obcaecati alias.
+                           </div>
+                           <div
+                            className="flex flex-row justify-center items-center"
+                           >
+                                Lorem ipsum dolor sit amet consectetur adipisicing elit. Distinctio officia eligendi perferendis voluptate fugiat eius, error soluta et nihil vel ratione, dolore hic aut ipsa quod impedit autem quos nesciunt.
+                           </div>
+                           
                         </div>
                     </div>
                 </div>

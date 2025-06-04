@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import Navbar from "~components/navbar";
-import Footer from "~components/footer";
+import Navbar from "@/pages/dashboard/_components/Navbar";
+import Footer from "@/pages/dashboard/_components/Footer";
 import { postRequest } from "~utils/api";
 import { getToken } from "~utils/localStorage";
 

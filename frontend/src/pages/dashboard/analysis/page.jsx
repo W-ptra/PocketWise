@@ -1,5 +1,5 @@
-import Navbar from "~components/navbar";
-import Footer from "~components/footer";
+import Navbar from "@/pages/dashboard/_components/Navbar";
+import Footer from "@/pages/dashboard/_components/Footer";
 
 function Analysis(){
     return (

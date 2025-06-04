@@ -1,9 +1,9 @@
 import { useState,useEffect,useRef } from "react";
 import { isInputsInvalid,redirectIfLogin } from "~utils/validation";
 import { deleteToken, getToken } from "~utils/localStorage";
-import Back from "~components/back";
+import Back from "@/pages/dashboard/_components/back";
 import { getRequest, postRequest, putRequest } from "~utils/api";
-import Message from "~components/message";
+import Message from "@/pages/dashboard/_components/message";
 
 function Profile(){
     const [id,setId] = useState("empty");

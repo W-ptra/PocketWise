@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { saveToken } from "../utils/localStorage";
+import { saveToken } from "../../utils/localStorage";
 
 function HandleGoogleOauthCallback(){
 

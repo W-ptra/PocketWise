@@ -1,15 +1,15 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom"
-import HandleGoogleOauthCallback from "./pages/handleGoogleAuthCallback"
-import RequestChangePassword from "./pages/requestChangePassword"
-import TransactionHistory from "./pages/transactionHistory"
-import ChangePassword from "./pages/changePassword"
+import HandleGoogleOauthCallback from "./pages/auth/handleGoogleAuthCallback"
+import RequestChangePassword from "./pages/dashboard/profile/_components/requestChangePassword"
+import TransactionHistory from "./pages/dashboard/transaction-history/transactionHistory"
+import ChangePassword from "./pages/auth/changePassword"
 import LandingPage from "./pages/landing/page"
-import Dashboard from './pages/dashboard'
-import Register from "./pages/register"
-import Analysis from "./pages/analysis"
-import Profile from "./pages/profile"
+import Dashboard from './pages/dashboard/page'
+import Register from "./pages/auth/register"
+import Analysis from "./pages/dashboard/analysis/analysis"
+import Profile from "./pages/dashboard/profile/profile"
 import Privacy from "./pages/privacy/page"
-import Login from "./pages/login"
+import Login from "./pages/auth/login"
 import './App.css'
 
 function App() {

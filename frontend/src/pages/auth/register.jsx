@@ -1,6 +1,6 @@
-import { isInputsInvalid,isPasswordAndConfirmPasswordNotMatch, redirectIfLogout } from "../utils/validation";
+import { isInputsInvalid,isPasswordAndConfirmPasswordNotMatch, redirectIfLogout } from "../../utils/validation";
 import { useState,useEffect } from "react";
-import { postRequest } from "../utils/api";
+import { postRequest } from "../../utils/api";
 
 const googleOauthRedirectLink = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${
   import.meta.env.VITE_APP_GOOGLE_OAUTH_CLIENT_ID

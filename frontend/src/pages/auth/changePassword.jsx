@@ -1,7 +1,7 @@
 import { useState,useEffect } from "react";
 import { useParams } from 'react-router-dom';
-import { isInputsInvalid,isPasswordAndConfirmPasswordNotMatch, redirectIfLogout } from "../utils/validation";
-import { putRequest } from "../utils/api";
+import { isInputsInvalid,isPasswordAndConfirmPasswordNotMatch, redirectIfLogout } from "../../utils/validation";
+import { putRequest } from "../../utils/api";
 
 function ChangePassword(){
     const [ password,setPassword ] = useState("");

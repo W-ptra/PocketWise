@@ -1,6 +1,6 @@
 import { useState,useEffect } from "react";
-import { isInputsInvalid, redirectIfLogout } from "../utils/validation";
-import { postRequest } from "../utils/api";
+import { isInputsInvalid, redirectIfLogout } from "../../../../utils/validation";
+import { postRequest } from "../../../../utils/api";
 
 function RequestChangePassword(){
     const [ email,setEmail ] = useState("");

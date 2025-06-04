@@ -1,7 +1,7 @@
 import { useState,useEffect } from "react";
-import { isInputsInvalid, redirectIfLogout } from "../utils/validation";
-import { postRequest } from "../utils/api";
-import { saveToken } from "../utils/localStorage";
+import { isInputsInvalid, redirectIfLogout } from "../../utils/validation";
+import { postRequest } from "../../utils/api";
+import { saveToken } from "../../utils/localStorage";
 
 const googleOauthRedirectLink = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${
   import.meta.env.VITE_APP_GOOGLE_OAUTH_CLIENT_ID

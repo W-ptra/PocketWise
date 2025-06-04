@@ -17,6 +17,11 @@ exports.plugin = {
                     }
                 },
                 handler: aiService.getTransactionsUsingOcr
+            },
+            {
+                method: "GET",
+                path: "/journal",
+                handler: aiService.getMonthJournay
             }
         ]);
     }

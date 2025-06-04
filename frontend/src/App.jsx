@@ -8,6 +8,7 @@ import Dashboard from './pages/dashboard'
 import Register from "./pages/register"
 import Analysis from "./pages/analysis"
 import Profile from "./pages/profile"
+import Privacy from "./pages/privacy/page"
 import Login from "./pages/login"
 import './App.css'
 
@@ -24,6 +25,7 @@ function App() {
         <Route path="/transaction-history" element={ <TransactionHistory/> } />
         <Route path="/analysis" element={ <Analysis/> } />
         <Route path="/profile" element={ <Profile/> } />
+        <Route path="/privacy" element={ <Privacy/> } />
         <Route path="/auth/google/callback" element={ <HandleGoogleOauthCallback/> } />
       </Routes>
     </BrowserRouter>

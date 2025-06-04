@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import Navbar from "../../../components/navbar";
-import Footer from "../../../components/footer";
-import { postRequest } from "../../../utils/api";
-import { getToken } from "../../../utils/localStorage";
+import Navbar from "~components/navbar";
+import Footer from "~components/footer";
+import { postRequest } from "~utils/api";
+import { getToken } from "~utils/localStorage";
 
 const allowedTransactionType = [
     "1",

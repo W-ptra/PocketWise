@@ -179,11 +179,12 @@ function Profile(){
                             ) : (
                                 <img className="size-16 bg-gray-200 rounded-full" src="/logo/User.png" alt="" />
                             )}
-
-                            <img 
-                                className="size-6 p-0.5 bg-gray-400 rounded-full absolute right-0 bottom-0 cursor-pointer hover:bg-gray-300" src="logo/edit.png" alt="" 
-                                onClick={toggleUploadImageWindow}    
-                            />
+                            { !isConnectToGoogle && (
+                                <img 
+                                    className="size-6 p-0.5 bg-gray-400 rounded-full absolute right-0 bottom-0 cursor-pointer hover:bg-gray-300" src="logo/edit.png" alt="" 
+                                    onClick={toggleUploadImageWindow}    
+                                />
+                            )}
                         </div>
                         
                         <div

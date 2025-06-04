@@ -76,6 +76,8 @@ function ChangePassword(){
             }
 
             setMessage(respond.message);
+
+            window.location.href = "/login";
         }
         catch(err){
             console.log(err);

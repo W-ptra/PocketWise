@@ -1,9 +1,9 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import HandleGoogleOauthCallback from "./pages/handleGoogleAuthCallback"
 import RequestChangePassword from "./pages/requestChangePassword"
-import TransactionHistory from "./pages/transactionHitory"
+import TransactionHistory from "./pages/transactionHistory"
 import ChangePassword from "./pages/changePassword"
-import LandingPage from "./pages/landingPage"
+import LandingPage from "./pages/landing/page"
 import Dashboard from './pages/dashboard'
 import Register from "./pages/register"
 import Analysis from "./pages/analysis"

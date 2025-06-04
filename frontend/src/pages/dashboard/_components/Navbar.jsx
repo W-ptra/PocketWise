@@ -10,7 +10,7 @@ function Navbar({ profileImage = "/logo/User.png" }) {
 
     return (
         <nav className="bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-100">
-            <div className="container mx-auto px-4">
+            <div className="mx-auto px-4 md:px-8">
                 {/* Top Section */}
                 <div className="flex justify-between items-center py-4">
                     <a href="/dashboard" className="flex items-center space-x-2">

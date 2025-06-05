@@ -1,4 +1,5 @@
 function TransactionList({ transactions, title }) {
+    
     return (
         <div className="bg-white p-6 rounded-xl shadow-sm h-full">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">{title}</h2>

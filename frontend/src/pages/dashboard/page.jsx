@@ -22,16 +22,22 @@ const chartData = [
 ];
 
 const topExpenses = [
-  { name: "MacBook M3", amount: -20000000 },
-  { name: "OS Shell I", amount: -10000000 },
-  { name: "Beras 2 kg", amount: -5000000 },
-  { name: "Sun M3 BB", amount: -210000 },
-  { name: "Casing Samsung A55", amount: -45000 },
+  { name: "MacBook M3", amount: -20000000, category: "Kebutuhan Kerja" },
+  { name: "OS Shell I", amount: -10000000, category: "Kebutuhan Kerja" },
+  { name: "Beras 2 kg", amount: -5000000, category: "Kebutuhan Pokok" },
+  { name: "Sun M3 BB", amount: -210000, category: "Kebutuhan Pokok" },
+  { name: "Casing Samsung A55", amount: -45000, category: "Kebutuhan Kerja" },
+  { name: "MacBook M3", amount: -20000000, category: "Kebutuhan Kerja" },
+  { name: "OS Shell I", amount: -10000000, category: "Kebutuhan Kerja" },
+  { name: "Beras 2 kg", amount: -5000000, category: "Kebutuhan Pokok" },
 ];
 
 const topIncome = [
   { name: "MacBook M3", amount: 20000000 },
   { name: "OS Shell I", amount: 10000000 },
+  { name: "Beras 2 kg", amount: 5000000 },
+  { name: "Sun M3 BB", amount: 210000 },
+  { name: "Casing Samsung A55", amount: 45000 },
   { name: "Beras 2 kg", amount: 5000000 },
   { name: "Sun M3 BB", amount: 210000 },
   { name: "Casing Samsung A55", amount: 45000 },
@@ -105,14 +111,14 @@ function DashboardPage() {
             <div className="grid grid-rows-2 grid-cols-1 gap-6 h-full">
               <div className="h-full">
                 <TransactionList
-                  transactions={topIncome}
-                  title="Top Pendapatan Mei 2025"
+                  transactions={topExpenses}
+                  title="Top Pengeluaran Mei 2025"
                 />
               </div>
               <div className="h-full">
                 <TransactionList
-                  transactions={topExpenses}
-                  title="Top Pengeluaran Mei 2025"
+                  transactions={topIncome}
+                  title="Top Pendapatan Mei 2025"
                 />
               </div>
             </div>

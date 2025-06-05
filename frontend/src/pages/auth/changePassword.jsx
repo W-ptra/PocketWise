@@ -1,15 +1,23 @@
 import { useState,useEffect } from "react";
-import { isInputsInvalid, redirectIfLogout } from "../utils/validation";
-import { postRequest } from "../utils/api";
+import { useParams } from 'react-router-dom';
+import { isInputsInvalid,isPasswordAndConfirmPasswordNotMatch, redirectIfLogout } from "~utils/validation";
+import { putRequest } from "~utils/api";
 
-function RequestChangePassword(){
-    const [ email,setEmail ] = useState("");
+function ChangePassword(){
+    const [ password,setPassword ] = useState("");
+    const [ confirmPassword,setConfirmPassword ] = useState("");
     const [ isSubmit,setIsSubmit ] = useState(false);
 
     redirectIfLogout();
 
-    const handleEmailChange = (e) => {
-        setEmail(e.target.value);
+    const { id } = useParams();
+
+    const handlePasswordChange = (e) => {
+        setPassword(e.target.value);
+    };
+
+    const handleConfirmPasswordChange = (e) => {
+        setConfirmPassword(e.target.value);
     };
 
     const handleIsSubmitChange = () => {
@@ -27,13 +35,16 @@ function RequestChangePassword(){
         button.disabled = false;
     }, [isSubmit]);
 
-    const requestResetLink = async () => {
+    const changePassword = async () => {
         setErroMessage("");
-        setEmail("");
+        handleIsSubmitChange();
+        setPassword("");
+        setConfirmPassword("");
         handleIsSubmitChange();
 
         const isInputInvalid = isInputsInvalid(
-            email
+            password,
+            confirmPassword
         );
 
         if(isInputInvalid){
@@ -41,32 +52,45 @@ function RequestChangePassword(){
             handleIsSubmitChange();
             return
         }
+
+        const isPasswordAndConfirmNotValid = isPasswordAndConfirmPasswordNotMatch(
+            password,
+            confirmPassword
+        )
+
+        if(isPasswordAndConfirmNotValid){
+            setErroMessage("Password and confirm password not match");
+            handleIsSubmitChange();
+            return
+        }
+        
         try{
-            const respond = await postRequest("api/auth/request-reset-password",null,{
-                email
+            const respond = await putRequest(`api/auth/reset-password/${id}`,null,{
+                password
             });
-    
+
             if(respond.error){
                 setErroMessage(respond.error);
                 handleIsSubmitChange();
                 return
             }
-    
-            setLinkMessage(respond.message)
+
+            setMessage(respond.message);
+
+            window.location.href = "/login";
         }
         catch(err){
             console.log(err);
             setErroMessage("something went wrong");
         }
-        handleIsSubmitChange();
     }
 
     const setErroMessage = (message) => {
         document.getElementById("errorMessage").innerText = message;
     }
 
-    const setLinkMessage = (message) => {
-        document.getElementById("linkMessage").innerText = message;
+    const setMessage = (message) => {
+        document.getElementById("message").innerText = message;
     }
 
     return (
@@ -74,19 +98,27 @@ function RequestChangePassword(){
             className="flex justify-center fixed top-0 bottom-0 left-0 right-0 mt-[10vh]"
         >
             <div
-                className="bg-white flex flex-col justify-center p-10 m-5 gap-y-3 rounded h-[15rem] pb-12"
+                className="bg-white flex flex-col justify-center p-10 m-5 gap-y-3 rounded h-[18rem]"
             >
                 <div className="flex justify-center">
                     <h1 className="text-[#00AB6B] font-bold text-[1.5rem]">
-                        Forget Password
+                        Change Password
                     </h1>
                 </div>
                 <div className="flex justify-center">
                     <input 
                         className="bg-[#F0F0F0] p-1 pl-4 border-2 w-[20rem] border-white  outline-none rounded-md" 
-                        type="text" placeholder="Email"
-                        onChange={handleEmailChange}
-                        value={email}        
+                        type="password" placeholder="New password"
+                        onChange={handlePasswordChange}
+                        value={password}       
+                    />
+                </div>
+                <div className="flex justify-center">
+                    <input 
+                        className="bg-[#F0F0F0] p-1 pl-4 border-2 w-[20rem] border-white  outline-none rounded-md" 
+                        type="password" placeholder="Confirm password"
+                        onChange={handleConfirmPasswordChange}
+                        value={confirmPassword}       
                     />
                 </div>
                 <p 
@@ -96,14 +128,14 @@ function RequestChangePassword(){
                 <div className="flex justify-center">
                     <button
                         className="bg-[#00AB6B] text-white font-bold w-full py-1 rounded hover:bg-[#00CF81] cursor-pointer"
-                        onClick={requestResetLink}
+                        onClick={changePassword}
                         id="buttonSubmit"
                     >
-                        Send reset link
+                        Change
                     </button>
                 </div>
                 <p 
-                    id="linkMessage" className="text-black text-center"
+                    id="message" className="text-black text-center"
                 >
                 </p>
             </div>
@@ -111,4 +143,4 @@ function RequestChangePassword(){
     )
 }
 
-export default RequestChangePassword;
+export default ChangePassword;

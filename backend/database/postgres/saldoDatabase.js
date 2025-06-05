@@ -13,7 +13,7 @@ async function createNewSaldo(userId){
 async function getSaldoByUserId(userId){
     return await prisma.saldo.findFirst({
         where: {
-            userId
+            userId:userId
         },
         select: {
             amount: true

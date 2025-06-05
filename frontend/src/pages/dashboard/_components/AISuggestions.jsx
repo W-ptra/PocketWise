@@ -6,7 +6,7 @@ function AISuggestions() {
   const [showTooltip, setShowTooltip] = useState(false);
 
   return (
-    <div className="relative bg-white p-6 rounded-xl shadow-lg flex overflow-hidden min-h-[220px]">
+    <div className="relative bg-white p-6 rounded-xl shadow-sm flex overflow-hidden min-h-[220px] h-full">
       <div className="pointer-events-none absolute inset-0 z-0">
         <Sparkles className="absolute top-4 left-8 w-8 h-8 text-[#00AB6B]/10 animate-pulse" />
         <Sparkles className="absolute bottom-6 right-10 w-6 h-6 text-[#FFB86B]/10 animate-pulse delay-200" />

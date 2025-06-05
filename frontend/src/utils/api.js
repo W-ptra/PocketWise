@@ -39,11 +39,12 @@ async function makeApiRequest(endpoint=null,method=null, token=null, payload=nul
     try{
 
         const request = await fetch(url,requestOption);
-        const respond = request.json();
 
-        if(respond.error && respond.error === "Authorization token is invalid or expired"){
-            deleteToken();
+        if(request.status === 401){
+             deleteToken();
         }
+
+        const respond = request.json();
         
         return respond;
     } 

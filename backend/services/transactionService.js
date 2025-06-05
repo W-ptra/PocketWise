@@ -58,6 +58,7 @@ async function createNewTransactions(request, h) {
   try {
     const user = request.user;
     const { transactions } = request.payload;
+    console.log(transactions)
 
     if (isInputInvalid(transactions))
       return h
@@ -66,11 +67,12 @@ async function createNewTransactions(request, h) {
         })
         .code(400);
 
+        
     let newTransactions = getNewTransactionsFromRequestPayload(
       user.id,
-      transactions
+      processTransactions(transactions)
     );
-
+    
     const invalidTransactionTypeIds =
       await getInvalidTransactionTypeIds(newTransactions);
 
@@ -98,6 +100,24 @@ async function createNewTransactions(request, h) {
     console.log(err);
   }
 }
+
+function processTransactions(transactions) {
+  console.log(transactions);
+  const processTransaction = transactions.map(transaction => {
+    const { id, ...rest } = transaction;
+    if (transaction.transactionTypeId !== "1") {
+      return {
+        ...rest,
+        amount: transaction.amount * -1,
+      };
+    }
+
+    return rest;
+  });
+
+  return processTransaction;
+}
+
 
 async function updateTransactions(request, h) {
   try {
@@ -281,6 +301,7 @@ function getTotalAmount(transactions){
 async function updateSaldo(userId,amounts){
   try{
   const saldo = await getSaldoByUserId(userId);
+  console.log(saldo,userId);
   const saldoTotalAmount = parseInt(saldo.amount) + parseInt(amounts);
   await updateSaldoByUserId(userId,saldoTotalAmount);
   }catch(err){

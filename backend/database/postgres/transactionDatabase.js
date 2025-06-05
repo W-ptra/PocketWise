@@ -3,7 +3,7 @@ const prisma = new PrismaClient();
 const dayjs = require("dayjs");
 
 async function createTransactions(transactions) {
-  console.log(transactions)
+
   try {
     const created = [];
     for (const tx of transactions) {
@@ -44,9 +44,7 @@ async function getTransactionByUserIdWithoutPagination(option = {}) {
 }
 
 async function getTransactionsByUserId(option = {}) {
-  const { userId, pagination = {} } = option;
-  const page = pagination.page || 1;
-  const pageSize = pagination.pageSize || 10;
+  const { userId, page = 1, pageSize = 10 } = option;
 
   const queryOption = queryOptionBuilder(option);
 
@@ -122,13 +120,12 @@ async function deleteTransactions(transactionId) {
 function queryOptionBuilder(option = {}) {
   const {
     userId,
-    pagination = {},
+    page,
+    pageSize,
     type,
     timeRange,
     limit,
   } = option;
-  const page = parseInt(pagination.page) || 1;
-  const pageSize = parseInt(pagination.pageSize) || 10;
 
   let amountFilter;
   let createdAtFilter;

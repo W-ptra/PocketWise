@@ -9,6 +9,7 @@ import TransactionList from "./_components/TransactionList";
 import ExpenseDistribution from "./_components/ExpenseDistribution";
 import AISuggestions from "./_components/AISuggestions";
 import InvestmentSuggestions from "./_components/InvestmentSuggestions";
+import ComparisonPieChart from "./_components/ComparisonPieChart";
 
 // Sample data - replace with actual data from your API
 const chartData = [
@@ -48,6 +49,20 @@ const distributionData = [
   { name: "Jajan", value: 30 },
   { name: "Investasi", value: 20 },
   { name: "Lainnya", value: 10 },
+];
+
+const nowComparisonData = [
+  { name: "Kebutuhan pokok", value: 40 },
+  { name: "Jajan", value: 30 },
+  { name: "Investasi", value: 20 },
+  { name: "Lainnya", value: 10 },
+];
+
+const lastComparisonData = [
+  { name: "Kebutuhan pokok", value: 30 },
+  { name: "Jajan", value: 20 },
+  { name: "Investasi", value: 10 },
+  { name: "Lainnya", value: 40 },
 ];
 
 function DashboardPage() {
@@ -126,8 +141,12 @@ function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ExpenseDistribution
-            data={distributionData}
+          <ComparisonPieChart
+            data={nowComparisonData}
+            title="Perbandingan Pengeluaran April 2025"
+          />
+          <ComparisonPieChart
+            data={lastComparisonData}
             title="Perbandingan Pengeluaran April 2025"
           />
         </div>

@@ -3,6 +3,7 @@ import Navbar from "@/pages/dashboard/_components/Navbar";
 import Footer from "@/pages/dashboard/_components/Footer";
 import { getToken } from "~utils/localStorage";
 import { getRequest } from "~utils/api";
+import { redirectIfLogin } from "~utils/validation";
 import BalanceCard from './_components/BalanceCard';
 import ExpenseChart from './_components/ExpenseChart';
 import TransactionList from './_components/TransactionList';
@@ -50,13 +51,26 @@ function DashboardPage() {
             try {
                 const token = getToken();
                 const response = await getRequest("api/user/profile", token);
-                console.log(response);
+                console.log("Full response:", response);
+                
                 if (response.data && response.data.profileImageUrl) {
+                    console.log("Profile image URL:", response.data.profileImageUrl);
+                    
+                    // For Google profile images, use our proxy
+                    if (response.data.profileImageUrl.includes('googleusercontent.com')) {
+                        const path = response.data.profileImageUrl.split('https://lh3.googleusercontent.com')[1];
+                        const proxyUrl = `/googleusercontent${path}`;
+                        console.log("Using proxy URL:", proxyUrl);
+                        setProfileImage(proxyUrl);
+                        return;
+                    }
+                    
+                    // For other images, use direct URL
                     setProfileImage(response.data.profileImageUrl);
                 }
-                
             } catch (error) {
                 console.error("Error fetching profile image:", error);
+                setProfileImage("/logo/User.png");
             }
         }
 

@@ -57,6 +57,14 @@ async function getMonthJournay(request,h) {
     const transactions = await getTransactionsByUserId(queryOption);
     const transactionsData = transactions.data;
 
+    if(transactionsData.length === 0){
+        return h
+            .response({
+                message: "transaction record is empty",
+            })
+            .code(404);
+    }
+
     const mlJournalCache = await getMlJournal(journalType,transactionsData)
 
     if (mlJournalCache){

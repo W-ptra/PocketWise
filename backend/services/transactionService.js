@@ -17,14 +17,26 @@ async function getAllTransaction(request, h) {
   const user = request.user;
 
   const queryOption = {
-    pagination,
+    size,
+    pageSize,
     type,
     timeRange,
     limit
   } = request.query;
 
   queryOption["userId"] = user.id;
+  queryOption.page = typeof(queryOption.page) === "number" ? queryOption.page : parseInt(queryOption.page);
+  queryOption.pageSize = typeof(queryOption.pageSize) === "number" ? queryOption.pageSize : parseInt(queryOption.pageSize);
+
   const transactions = await getTransactionsByUserId(queryOption);
+
+  if(transactions.length === 0){
+    return h
+      .response({
+        error: "transaction record is empty",
+      })
+      .code(404);
+  }
 
   return h
     .response({
@@ -46,6 +58,14 @@ async function getAllTransactionTypeComparision(request,h){
   const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
   const transactionTypeComparision = getTransactionTypeComparationFromTransaction(transactions);
 
+  if(transactionTypeComparision.total === 0){
+    return h
+      .response({
+        error: "transaction comparision record is empty",
+      })
+      .code(404);
+  }
+
   return h
     .response({
       message: "successfully retrive transactions comparision",
@@ -58,7 +78,6 @@ async function createNewTransactions(request, h) {
   try {
     const user = request.user;
     const { transactions } = request.payload;
-    console.log(transactions)
 
     if (isInputInvalid(transactions))
       return h
@@ -67,7 +86,14 @@ async function createNewTransactions(request, h) {
         })
         .code(400);
 
-        
+    if(isTransactionTypeIdValid(transactions)){
+      return h
+        .response({
+          message: "transactionTypeId must number and range between 1 to 11",
+        })
+        .code(400);
+    }
+  
     let newTransactions = getNewTransactionsFromRequestPayload(
       user.id,
       processTransactions(transactions)
@@ -77,8 +103,6 @@ async function createNewTransactions(request, h) {
       await getInvalidTransactionTypeIds(newTransactions);
 
     if (invalidTransactionTypeIds.length > 0){
-        console.log("trigger," ,invalidTransactionTypeIds)
-        console.log(newTransactions)
       return h
         .response({
           error: `Invalid transaction type IDs: ${invalidTransactionTypeIds.join(", ")}`,
@@ -101,21 +125,38 @@ async function createNewTransactions(request, h) {
   }
 }
 
+function isTransactionTypeIdValid(transactions) {
+  return transactions.some(transaction => {
+    const rawId = transaction.transactionTypeId;
+    const transactionTypeId = typeof rawId === "number" ? rawId : parseInt(rawId);
+
+    if (isNaN(transactionTypeId)) return true;
+
+    return transactionTypeId < 1 || transactionTypeId > 11;
+  });
+}
+
 function processTransactions(transactions) {
-  console.log(transactions);
-  const processTransaction = transactions.map(transaction => {
-    const { id, ...rest } = transaction;
-    if (transaction.transactionTypeId !== "1") {
+
+  return transactions.map(transaction => {
+    const { id,transactionTypeId, ...rest } = transaction;
+
+    let transactionTypeIdNumber = typeof(transactionTypeId) === "number" ? transactionTypeId : parseInt(transactionTypeId)
+
+    
+    if (transactionTypeIdNumber !== 1) {
       return {
         ...rest,
+        transactionTypeId: transactionTypeIdNumber,
         amount: transaction.amount * -1,
       };
     }
-
-    return rest;
+    
+    return {
+      transactionTypeId: transactionTypeIdNumber,
+      ...rest
+    };
   });
-
-  return processTransaction;
 }
 
 
@@ -140,7 +181,6 @@ async function updateTransactions(request, h) {
       await getInvalidTransactionTypeIds(newTransactions);
 
     if (invalidTransactionIds.length > 0){
-        console.log("trigger", invalidTransactionIds)
       return h
         .response({
           error: `Invalid transaction type IDs: ${invalidTransactionIds}`,
@@ -159,14 +199,13 @@ async function updateTransactions(request, h) {
         .code(403);
 
     const totalAmountOld = await getTotalAmountFromTransaction(newTransactions);
-    console.log("totalAmountOld",totalAmountOld)
     newTransactions = await updateTransaction(
       user.id,
       newTransactions
     );
 
     const totalAmountNew = getTotalAmount(newTransactions);
-    console.log("totalAmountNew",totalAmountNew)
+
     const delta = totalAmountNew - totalAmountOld;
     await updateSaldo(user.id,delta);
 
@@ -301,7 +340,7 @@ function getTotalAmount(transactions){
 async function updateSaldo(userId,amounts){
   try{
   const saldo = await getSaldoByUserId(userId);
-  console.log(saldo,userId);
+
   const saldoTotalAmount = parseInt(saldo.amount) + parseInt(amounts);
   await updateSaldoByUserId(userId,saldoTotalAmount);
   }catch(err){

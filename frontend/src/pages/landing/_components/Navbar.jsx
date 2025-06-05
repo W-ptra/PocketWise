@@ -17,12 +17,16 @@ function Navbar() {
           </a>
 
           <div className="flex items-center space-x-4">
-            <button className="text-[#00AB6B] hover:text-[#009B5E] font-semibold transition-colors">
-              Login
-            </button>
-            <button className="bg-[#00AB6B] text-white px-6 py-2 rounded-full font-semibold hover:bg-[#009B5E] transition-all duration-300 hover:scale-105 hover:shadow-lg">
-              Join Us
-            </button>
+            <a href="/login">
+              <button className="text-[#00AB6B] hover:text-[#009B5E] font-semibold transition-colors cursor-pointer">
+                Login
+              </button>
+            </a>
+            <a href="/register">
+              <button className="bg-[#00AB6B] text-white px-6 py-2 rounded-full font-semibold hover:bg-[#009B5E] transition-all duration-300 hover:scale-105 hover:shadow-lg cursor-pointer">
+                Join Us
+              </button>
+            </a>
           </div>
         </div>
       </div>

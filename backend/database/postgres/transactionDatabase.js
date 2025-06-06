@@ -27,7 +27,7 @@ async function getSingleTransactionByUserId(userId, transactionId) {
 
 async function getTransactionByUserIdWithoutPagination(option = {}) {
   const queryOption = queryOptionBuilderWithoutPagination(option);
-  console.log(queryOption)
+
   try {
     const data = await prisma.transaction.findMany({
       ...queryOption,
@@ -52,7 +52,7 @@ async function getTransactionsByUserId(option = {}) {
   pageSize = pageSize || 10;
 
   const queryOption = queryOptionBuilder(option);
-  console.log(queryOption);
+
   try {
     const [data, total] = await Promise.all([
       prisma.transaction.findMany({
@@ -133,7 +133,7 @@ function queryOptionBuilder(option = {}) {
     timeRange,
     limit,
   } = option;
-  console.log(option)
+
   let amountFilter;
   let createdAtFilter;
   let orderBy;
@@ -185,7 +185,6 @@ function queryOptionBuilderWithoutPagination(option = {}) {
     timeRange,
   } = option;
 
-  console.log(type,timeRange)
 
   let amountFilter;
   let createdAtFilter;
@@ -205,6 +204,10 @@ function queryOptionBuilderWithoutPagination(option = {}) {
     if (timeRange === "day") {
       createdAtFilter = {
         gte: dayjs().subtract(1, "day").startOf("day").toDate(),
+      };
+    } else if (timeRange === "week") {
+      createdAtFilter = {
+        gte: dayjs().subtract(1, "week").startOf("day").toDate(),
       };
     } else if (timeRange === "month") {
       createdAtFilter = {

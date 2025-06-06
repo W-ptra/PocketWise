@@ -104,6 +104,8 @@ async function createNewTransactions(request, h) {
       processTransactions(transactions)
     );
     
+    console.log(newTransactions);
+
     const invalidTransactionTypeIds =
       await getInvalidTransactionTypeIds(newTransactions);
 

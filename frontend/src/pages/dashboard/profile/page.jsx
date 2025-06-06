@@ -1,5 +1,5 @@
 import { useState,useEffect,useRef } from "react";
-import { isInputsInvalid,redirectIfLogin } from "~utils/validation";
+import { isInputsInvalid } from "~utils/validation";
 import { deleteToken, getToken } from "~utils/localStorage";
 import Back from "@/pages/dashboard/_components/back";
 import { getRequest, postRequest, putRequest } from "~utils/api";
@@ -48,8 +48,6 @@ function Profile(){
     const toggleUploadImageWindow = () => {
         setShowUplaodImage((prev) => !prev);
     }
-
-    redirectIfLogin();
 
     useEffect(() => {
         const getProfileInfo = async () => {

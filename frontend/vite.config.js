@@ -24,11 +24,17 @@ export default defineConfig({
     },
     cors: true,
     proxy: {
-      '/googleusercontent.com': {
+      '/googleusercontent': {
         target: 'https://lh3.googleusercontent.com',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/googleusercontent.com/, '')
+        rewrite: (path) => path.replace(/^\/googleusercontent/, ''),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+          'Accept': 'image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Connection': 'keep-alive'
+        }
       }
     }
   }

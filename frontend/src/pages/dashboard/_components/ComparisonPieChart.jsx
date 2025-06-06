@@ -1,6 +1,42 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { Utensils, Pizza, Coins, Info } from "lucide-react";
 
-function ExpenseDistribution({ data, title }) {
+function giveIconByCategory(category, color) {
+    switch (category) {
+        case "Kebutuhan pokok":
+            return (
+                <div className="border-2 border-gray-300 rounded-full p-2">
+                    <Utensils style={{ color }} className="w-4 h-4" />
+                </div>
+            );
+        case "Jajan":
+            return (
+                <div className="border-2 border-gray-300 rounded-full p-2">
+                    <Pizza style={{ color }} className="w-4 h-4" />
+                </div>
+            );
+        case "Investasi":
+            return (
+                <div className="border-2 border-gray-300 rounded-full p-2">
+                    <Coins style={{ color }} className="w-4 h-4" />
+                </div>
+            );
+        case "Lainnya":
+            return (
+                <div className="border-2 border-gray-300 rounded-full p-2">
+                    <Info style={{ color }} className="w-4 h-4" />
+                </div>
+            );
+        default:
+            return (
+                <div className="border-2 border-gray-300 rounded-full p-1">
+                    <Info style={{ color }} className="w-4 h-4" />
+                </div>
+            );
+    }
+}
+
+function ComparisonPieChart({ data, title }) {
   const COLORS = ["#00AB6B", "#FFB86B", "#FF6B6B", "#4ECDC4"];
 
   return (
@@ -12,10 +48,7 @@ function ExpenseDistribution({ data, title }) {
         <div className="flex flex-col gap-4 mr-8 min-w-[120px]">
           {data.map((entry, index) => (
             <div key={entry.name} className="flex items-center gap-2">
-              <span
-                className="inline-block w-4 h-4 rounded-sm"
-                style={{ backgroundColor: COLORS[index % COLORS.length] }}
-              ></span>
+              {giveIconByCategory(entry.name, COLORS[index % COLORS.length])}
               <span
                 className="text-sm font-medium"
                 style={{ color: COLORS[index % COLORS.length] }}
@@ -33,9 +66,8 @@ function ExpenseDistribution({ data, title }) {
                 data={data}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={80}
-                paddingAngle={5}
+                outerRadius={90}
+                paddingAngle={1}
                 dataKey="value"
               >
                 {data.map((entry, index) => (
@@ -53,4 +85,4 @@ function ExpenseDistribution({ data, title }) {
   );
 }
 
-export default ExpenseDistribution;
+export default ComparisonPieChart;

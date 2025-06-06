@@ -10,6 +10,7 @@ import Analysis from "./pages/dashboard/analysis/page"
 import Profile from "./pages/dashboard/profile/page"
 import Privacy from "./pages/privacy/page"
 import Login from "./pages/auth/login"
+import ProtectedRoute from "./components/ProtectedRoute"
 import './App.css'
 
 function App() {
@@ -21,10 +22,38 @@ function App() {
         <Route path="/register" element={ <Register/> } />
         <Route path="/request-change-password" element={ <RequestChangePassword/> } />
         <Route path="/change-password/:id" element={ <ChangePassword/> } />
-        <Route path="/dashboard" element={ <Dashboard/> } />
-        <Route path="/transaction-history" element={ <TransactionHistory/> } />
-        <Route path="/analysis" element={ <Analysis/> } />
-        <Route path="/profile" element={ <Profile/> } />
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/transaction-history" 
+          element={
+            <ProtectedRoute>
+              <TransactionHistory />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/analysis" 
+          element={
+            <ProtectedRoute>
+              <Analysis />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } 
+        />
         <Route path="/privacy" element={ <Privacy/> } />
         <Route path="/auth/google/callback" element={ <HandleGoogleOauthCallback/> } />
       </Routes>

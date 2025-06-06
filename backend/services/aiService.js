@@ -1,11 +1,14 @@
 const { ocr } = require("../utils/AI")
 const {
   getTransactionsByUserId,
+  getTransactionByUserIdWithoutPagination,
 } = require("../database/postgres/transactionDatabase");
 const { setMlJournal,getMlJournal } = require("../database/redis/cacheMlJournal");
+const { isInputInvalid } = require("../utils/validation");
 require("dotenv").config();
 
 const ML_HOST = process.env.ML_HOST;
+const PERMITTED_TIME_RANGE = [ "week","month","year" ];
 
 async function getTransactionsUsingOcr(request, h) {
     const data = request.payload;
@@ -34,6 +37,52 @@ async function getTransactionsUsingOcr(request, h) {
         .code(200);
 }
 
+async function getDailyJournal(request,h) {
+    const journalType = "daily";
+    const user = request.user;
+    const { timeRange } = request.query;
+
+    if (isInputInvalid(timeRange)){
+        return h
+            .response({
+            message: "invalid input",
+            })
+            .code(400);
+    }
+
+    if(!PERMITTED_TIME_RANGE.includes(timeRange)){
+        return h
+            .response({
+            message: "invalid input",
+            })
+            .code(400);
+    }
+
+    const queryOption = {
+        userId: user.id,
+        type: "top-expense"
+    }
+
+    const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
+
+    console.log(transactions.length)
+    if(transactions.length === 0){
+        return h
+            .response({
+                message: "transaction record is empty",
+            })
+            .code(404);
+    }
+
+
+    return h
+            .response({
+                message: "transaction record is empty",
+            })
+            .code(404);
+}
+
+
 async function getMonthJournay(request,h) {
     const journalType = "monthly";
     const user = request.user;
@@ -54,10 +103,9 @@ async function getMonthJournay(request,h) {
         userId: user.id
     }
 
-    const transactions = await getTransactionsByUserId(queryOption);
-    const transactionsData = transactions.data;
+    const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
 
-    if(transactionsData.length === 0){
+    if(transactions.length === 0){
         return h
             .response({
                 message: "transaction record is empty",
@@ -65,19 +113,19 @@ async function getMonthJournay(request,h) {
             .code(404);
     }
 
-    const mlJournalCache = await getMlJournal(journalType,transactionsData)
+    //const mlJournalCache = await getMlJournal(journalType,transactions)
 
-    if (mlJournalCache){
-        return h
-            .response({
-            message: "successfully retrive month journal",
-            data: mlJournalCache,
-            })
-            .code(200);
-    }
+    // if (mlJournalCache){
+    //     return h
+    //         .response({
+    //         message: "successfully retrive month journal",
+    //         data: mlJournalCache,
+    //         })
+    //         .code(200);
+    // }
 
-    const journal_entry = formatMlRequest(transactionsData);
-
+    const journal_entry = formatMlRequest(transactions);
+  
     const option = {
         method: "POST",
         headers: {
@@ -85,11 +133,11 @@ async function getMonthJournay(request,h) {
         },
         body: JSON.stringify({journal_entry})
     }
-
-    const result = await fetch(`${ML_HOST}/journal`,option);
+    
+    const result = await fetch(`${ML_HOST}/journal/month`,option);
     const data = await result.json();
 
-    setMlJournal(journalType,transactionsData,data);
+    //setMlJournal(journalType,transactions,data);
 
     return h
         .response({
@@ -115,6 +163,7 @@ function formatMlRequest(transactions){
     }
 
     transactions.forEach(transaction => {
+        console.log(transaction);
         const type = transaction.transactionType.name;
         const amount = Math.abs(transaction.amount);
         if (journal_entry.hasOwnProperty(type)) {
@@ -127,5 +176,6 @@ function formatMlRequest(transactions){
 
 module.exports = {
     getTransactionsUsingOcr,
+    getDailyJournal,
     getMonthJournay
 }

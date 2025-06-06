@@ -48,9 +48,9 @@ def predict_expense_controller(days, journal_entry, model, scaler_expense, scale
         X_data = daily_expense[features].values.tolist()
         predictions_scaled = []
 
-        for _ in range(days):  # predict for 7 future days
+        for _ in range(days):
             X_input = np.array(X_data[-window_size:]).reshape(1, window_size, -1)
-            pred_scaled = model.predict(X_input)[0][0]
+            pred_scaled = max(0, model.predict(X_input)[0][0])
             predictions_scaled.append(pred_scaled)
 
             last_row = X_data[-1]

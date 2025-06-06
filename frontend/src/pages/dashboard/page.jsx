@@ -202,7 +202,7 @@ function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-3 grid-rows-3 gap-6 min-h-[600px]">
-          <div className="col-span-2 row-span-1">
+          <div className="col-span-2 row-span-1 col-start-2">
             <AISuggestions />
           </div>
           <div className="col-span-2 row-start-2 row-span-2">

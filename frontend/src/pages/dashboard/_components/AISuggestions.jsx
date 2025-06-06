@@ -12,7 +12,7 @@ function AISuggestions() {
         <Sparkles className="absolute bottom-6 right-10 w-6 h-6 text-[#FFB86B]/10 animate-pulse delay-200" />
         <Sparkles className="absolute top-1/2 right-2 w-5 h-5 text-[#4ECDC4]/10 animate-pulse delay-500" />
       </div>
-      <div className="absolute left-0 top-0 h-full w-2 bg-gradient-to-b from-[#00AB6B] via-[#4ECDC4] to-[#FFB86B] rounded-l-xl z-10" />
+      <div className="absolute right-0 top-0 h-full w-2 bg-gradient-to-b from-[#00AB6B] via-[#4ECDC4] to-[#FFB86B] rounded-r-xl z-10" />
       <div className="flex-1 pl-6 z-10">
         <h2 className="text-gray-600 font-bold text-xl flex items-center gap-2 mb-2">
           <Sparkles className="w-6 h-6 text-[#00AB6B] animate-pulse" />

@@ -1,6 +1,7 @@
 const { ocr } = require("../utils/AI")
 const {
   getTransactionsByUserId,
+  getTransactionByUserIdWithoutPagination,
 } = require("../database/postgres/transactionDatabase");
 const { setMlJournal,getMlJournal } = require("../database/redis/cacheMlJournal");
 require("dotenv").config();
@@ -54,10 +55,9 @@ async function getMonthJournay(request,h) {
         userId: user.id
     }
 
-    const transactions = await getTransactionsByUserId(queryOption);
-    const transactionsData = transactions.data;
+    const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
 
-    if(transactionsData.length === 0){
+    if(transactions.length === 0){
         return h
             .response({
                 message: "transaction record is empty",
@@ -65,7 +65,7 @@ async function getMonthJournay(request,h) {
             .code(404);
     }
 
-    const mlJournalCache = await getMlJournal(journalType,transactionsData)
+    const mlJournalCache = await getMlJournal(journalType,transactions)
 
     if (mlJournalCache){
         return h
@@ -76,7 +76,7 @@ async function getMonthJournay(request,h) {
             .code(200);
     }
 
-    const journal_entry = formatMlRequest(transactionsData);
+    const journal_entry = formatMlRequest(transactions);
 
     const option = {
         method: "POST",
@@ -89,7 +89,7 @@ async function getMonthJournay(request,h) {
     const result = await fetch(`${ML_HOST}/journal`,option);
     const data = await result.json();
 
-    setMlJournal(journalType,transactionsData,data);
+    setMlJournal(journalType,transactions,data);
 
     return h
         .response({

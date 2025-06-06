@@ -11,14 +11,16 @@ async function createNewSaldo(userId){
 }
 
 async function getSaldoByUserId(userId){
-    return await prisma.saldo.findFirst({
+    const data = await prisma.saldo.findFirst({
         where: {
             userId:userId
         },
         select: {
             amount: true
         }
-    })
+    });
+    console.log(data);
+    return data;
 }
 
 async function updateSaldoByUserId(userId,amount){

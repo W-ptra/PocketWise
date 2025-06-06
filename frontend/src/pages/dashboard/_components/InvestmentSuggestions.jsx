@@ -106,7 +106,7 @@ function InvestmentSuggestions() {
       <div className="relative z-10">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-gray-700 font-bold text-xl flex items-center gap-2">
+          <h2 className="text-gray-600 font-bold text-xl flex items-center gap-2">
             <PiggyBank className="w-6 h-6 text-[#4ECDC4]" />
             Investment Opportunities
           </h2>

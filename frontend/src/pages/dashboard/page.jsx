@@ -9,7 +9,6 @@ import TransactionList from "./_components/TransactionList";
 import DistributionChart from "./_components/DistributionChart";
 import AISuggestions from "./_components/AISuggestions";
 import InvestmentSuggestions from "./_components/InvestmentSuggestions";
-import ComparisonPieChart from "./_components/ComparisonPieChart";
 
 // Sample data - replace with actual data from your API
 const chartData = [

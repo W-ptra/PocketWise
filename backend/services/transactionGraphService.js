@@ -14,7 +14,7 @@ const dayjs = require("dayjs");
 dayjs.extend(customParseFormat);
 
 const ALLOWED_TIME_RANGE = ["day","week","month","year"];
-const ALLOWED_TRANSACTION_TYPE = ["top-income","top-expense","alltime"];
+const ALLOWED_TRANSACTION_TYPE = ["income","expense","all"];
 
 async function getAllTransactionForGraph(request,h){
     const user = request.user;
@@ -49,11 +49,11 @@ async function getAllTransactionForGraph(request,h){
         type
     }
 
-    if(type === "alltime"){
+    if(type === "all"){
         queryOption = {
             userId: user.id,
             timeRange,
-            type: "top-expense"
+            type: "expense"
         }
     }
     
@@ -69,16 +69,16 @@ async function getAllTransactionForGraph(request,h){
 
     let transactionGraph = formatTransactionsToGraphData(transactions,timeRange);
 
-    if( type === "top-expense" || type === "top-income"){
+    if( type === "expense" || type === "income"){
         transactionGraph = formatTransactionType(transactionGraph,type)
-    } else if(type === "alltime"){
+    } else if(type === "all"){
 
         const transactionGraphExpense = transactionGraph;
 
         const queryOptionIncome = {
             userId: user.id,
             timeRange,
-            type: "top-income"
+            type: "income"
         }
         const transactionsIncome = await getTransactionByUserIdWithoutPagination(queryOptionIncome);
         const transactionGraphIncome = formatTransactionsToGraphData(transactionsIncome,timeRange);
@@ -138,7 +138,7 @@ function formatTransactionsToGraphData(transactions,timeRange){
 function formatTransactionType(transactionGraph,type){
     let transactionGraphDataUnsort = [];
     for(key in transactionGraph){
-        if( type === "top-expense"){
+        if( type === "expense"){
             transactionGraphDataUnsort.push({
                 date: transactionGraph[key].date,
                 expense: transactionGraph[key].amount,

@@ -60,7 +60,7 @@ async function getDailyJournal(request,h) {
 
     const queryOption = {
         userId: user.id,
-        type: "top-expense"
+        type: "expense"
     }
 
     const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
@@ -96,19 +96,82 @@ async function getDailyJournal(request,h) {
     const result = await fetch(`${ML_HOST}/journal/day?time=${timeRange}`,option);
     const data = await result.json();
 
-    const respond = {
-        prediction: data.predicted_expense_next_7_days,
-        prediction_raw: data.raw_values
-    }
+    let dailyJournalGraph = formatDailyJournalToArrayWithDate(data.prediction);
 
-    setMlJournal(`${journalType}:${timeRange}`,journal_entry,respond);
+    dailyJournalGraph = formatDailyJournalGraph(dailyJournalGraph,timeRange);
+
+    setMlJournal(`${journalType}:${timeRange}`,journal_entry,dailyJournalGraph);
 
     return h
         .response({
             message: "successfully retrive month journal",
-            data: respond
+            data: dailyJournalGraph
         })
         .code(200);
+}
+
+function formatDailyJournalToArrayWithDate(predictions){
+    let counter = 0;
+    return predictions.map( prediction => {
+        const expense = typeof(prediction) === "number" ? prediction : parseInt(prediction);
+        const date = new Date();
+        date.setDate(date.getDate() + counter);
+        
+        counter++;
+        return {
+            expense,
+            date: date.toISOString()
+        }
+    } );
+}
+
+function formatDailyJournalGraph(predictions,timeRange){
+    let journalAggregate = {}
+    let timeRangeKey = "";
+
+    predictions.forEach( prediction => {
+        const dateTime = prediction.date.split("T");
+        const date = dateTime[0].split("-");
+        
+        const year = date[0];
+        const month = date[1];
+        const day = date[2];
+        const time =  dateTime[1].split(":");
+
+        const hour = time[0];
+
+        if(timeRange === "day"){
+            timeRangeKey = `${year}/${month}/${day} ${hour}:00:00`;
+        } else if (timeRange === "week" || timeRange === "month"){
+            timeRangeKey = `${year}/${month}/${day} 00:00:00`;
+        } else if (timeRange === "year"){
+            timeRangeKey = `${year}/${month}/01 00:00:00`;
+        }
+
+        if(!journalAggregate[timeRangeKey]){
+            journalAggregate[timeRangeKey] = {
+                date: timeRangeKey,
+                expense: 0
+            }
+        }
+        
+        let expense = typeof(prediction.expense) === "number" ? prediction.expense : parseInt(prediction.expense);
+        expense = expense > 0 ? expense : -expense;
+
+        journalAggregate[timeRangeKey].expense += expense;
+    } )
+
+    let journalGraphDataUnsort = [];
+    for(key in journalAggregate){
+        journalGraphDataUnsort.push({
+            date: journalAggregate[key].date,
+            expense: journalAggregate[key].expense,
+        })
+    }
+
+    journalGraphDataUnsort = journalGraphDataUnsort.map(({ index, ...rest }) => rest);
+
+    return journalGraphDataUnsort.sort((a, b) => new Date(a.date) - new Date(b.date));
 }
 
 function formatMlDayRequest(transactions) {

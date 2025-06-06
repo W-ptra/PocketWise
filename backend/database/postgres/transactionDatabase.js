@@ -138,10 +138,10 @@ function queryOptionBuilder(option = {}) {
   let createdAtFilter;
   let orderBy;
 
-  if (type === "top-expense") {
+  if (type === "expense") {
     amountFilter = { lt: 0 };
     orderBy = { amount: "asc" };
-  } else if (type === "top-income") {
+  } else if (type === "income") {
     amountFilter = { gt: 0 };
     orderBy = { amount: "desc" };
   } else {
@@ -190,10 +190,10 @@ function queryOptionBuilderWithoutPagination(option = {}) {
   let createdAtFilter;
   let orderBy;
 
-  if (type === "top-expense") {
+  if (type === "expense") {
     amountFilter = { lt: 0 };
     orderBy = { amount: "asc" };
-  } else if (type === "top-income") {
+  } else if (type === "income") {
     amountFilter = { gt: 0 };
     orderBy = { amount: "desc" };
   } else {

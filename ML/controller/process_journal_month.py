@@ -24,7 +24,7 @@ def saran_tabungan(user_data, categories):
     )
     return saran_text
 
-def process_journal(request, model, scaler, categories):
+def process_journal_month(request, model, scaler, categories):
     try:
         journal_entry = request.json.get('journal_entry')
 

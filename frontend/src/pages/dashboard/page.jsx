@@ -13,13 +13,48 @@ import ComparisonPieChart from "./_components/ComparisonPieChart";
 
 // Sample data - replace with actual data from your API
 const chartData = [
-  { date: "01/05/2024", income: 1500000, expense: 1200000, investment: 1500000 },
-  { date: "05/05/2024", income: 1800000, expense: 1400000, investment: 1600000 },
-  { date: "10/05/2024", income: 1600000, expense: 1100000, investment: 1400000 },
-  { date: "15/05/2024", income: 2000000, expense: 1600000, investment: 1800000 },
-  { date: "20/05/2024", income: 1900000, expense: 1300000, investment: 1700000 },
-  { date: "25/05/2024", income: 1700000, expense: 1500000, investment: 1500000 },
-  { date: "30/05/2024", income: 1500000, expense: 1200000, investment: 1400000 },
+  {
+    date: "01/05/2024",
+    income: 1500000,
+    expense: 1200000,
+    investment: 1500000,
+  },
+  {
+    date: "05/05/2024",
+    income: 1800000,
+    expense: 1400000,
+    investment: 1600000,
+  },
+  {
+    date: "10/05/2024",
+    income: 1600000,
+    expense: 1100000,
+    investment: 1400000,
+  },
+  {
+    date: "15/05/2024",
+    income: 2000000,
+    expense: 1600000,
+    investment: 1800000,
+  },
+  {
+    date: "20/05/2024",
+    income: 1900000,
+    expense: 1300000,
+    investment: 1700000,
+  },
+  {
+    date: "25/05/2024",
+    income: 1700000,
+    expense: 1500000,
+    investment: 1500000,
+  },
+  {
+    date: "30/05/2024",
+    income: 1500000,
+    expense: 1200000,
+    investment: 1400000,
+  },
 ];
 
 const distributionData = [
@@ -31,45 +66,51 @@ const distributionData = [
 
 function DashboardPage() {
   const [profileImage, setProfileImage] = useState("/logo/User.png");
-  const [comparasionExpense,setComparasionExpense] = useState([]);
-  const [comparasionIncome,setComparasionIncome] = useState([]);
-  const [topExpenses,setTopExpenses] = useState([]);
-  const [topIncome,setTopIncome] = useState([]);
-  const [saldo,setSaldo] = useState(0);
+  const [comparasionExpense, setComparasionExpense] = useState([]);
+  const [comparasionIncome, setComparasionIncome] = useState([]);
+  const [topExpenses, setTopExpenses] = useState([]);
+  const [topIncome, setTopIncome] = useState([]);
+  const [saldo, setSaldo] = useState(0);
 
   const fetchTopExpenses = async () => {
-    const result = await getRequest("api/transaction?type=top-expense",getToken());
-    if(result.error) return;
+    const result = await getRequest(
+      "api/transaction?type=top-expense",
+      getToken()
+    );
+    if (result.error) return;
 
-    const processTransactionData = result.data.data.map(transaction => {
+    const processTransactionData = result.data.data.map((transaction) => {
       return {
         name: transaction.title,
         category: transaction.transactionType.name,
-        amount: transaction.amount
-      }
+        amount: transaction.amount,
+      };
     });
 
     setTopExpenses(processTransactionData);
-  }
+  };
 
   const fetchTopIncome = async () => {
-    const result = await getRequest("api/transaction?type=top-income",getToken());
-    if(result.error) return;
+    const result = await getRequest(
+      "api/transaction?type=top-income",
+      getToken()
+    );
+    if (result.error) return;
 
     const processTransactionData = [];
     const comparisionIncome = [];
 
-    result.data.data.forEach(transaction => {
+    result.data.data.forEach((transaction) => {
       const transactionData = {
         name: transaction.title,
         category: transaction.transactionType.name,
-        amount: parseInt(transaction.amount)
-      }
-      
+        amount: parseInt(transaction.amount),
+      };
+
       const incomeData = {
         name: transaction.title,
-        value: parseInt(transaction.amount)
-      }
+        value: parseInt(transaction.amount),
+      };
 
       comparisionIncome.push(incomeData);
       processTransactionData.push(transactionData);
@@ -78,34 +119,36 @@ function DashboardPage() {
     console.log(comparisionIncome);
     setComparasionIncome(comparisionIncome);
     setTopIncome(processTransactionData);
-  }
+  };
 
   const fetchComparisionExpense = async () => {
-    const result = await getRequest("api/transaction/comparision?timeRange=month&type=top-expense",getToken());
-    if(result.error) return;
+    const result = await getRequest(
+      "api/transaction/comparision?timeRange=month&type=top-expense",
+      getToken()
+    );
+    if (result.error) return;
 
     let comparisionExpenseData = [];
 
-    for(const key in result.data){
-      if(key !== "total"){
+    for (const key in result.data) {
+      if (key !== "total") {
         const expenseData = {
           name: key,
-          value: result.data[key]
-        }
-        comparisionExpenseData.push(expenseData)
+          value: result.data[key],
+        };
+        comparisionExpenseData.push(expenseData);
       }
     }
 
     setComparasionExpense(comparisionExpenseData);
-  }
+  };
 
   const fetchSaldo = async () => {
-    const result = await getRequest("api/saldo",getToken());
-    if(result.error) return;
+    const result = await getRequest("api/saldo", getToken());
+    if (result.error) return;
 
     setSaldo(result.data.amount);
-  }
-
+  };
 
   useEffect(() => {
     fetchComparisionExpense();

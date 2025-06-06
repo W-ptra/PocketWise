@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar } from "lucide-react";
+import { Calendar, Camera, InfoIcon } from "lucide-react";
 import * as Ariakit from "@ariakit/react";
 
 const TransactionType = [
@@ -25,6 +25,8 @@ const TransactionForm = () => {
     date: new Date().toISOString().split("T")[0],
   });
 
+  const [showTooltip, setShowTooltip] = useState(false);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -49,7 +51,27 @@ const TransactionForm = () => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Add Transaction</h2>
+        <h2 className="text-xl font-bold text-gray-700">Add Transaction</h2>
+        <div className="flex items-center gap-2">
+          <button className="text-blue-400 border border-blue-400 px-4 py-2 rounded-lg transition-all duration-300 hover:bg-blue-400 hover:text-white cursor-pointer animate-bounce">
+            <Camera className="w-4 h-4" />
+          </button>
+          <div
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+            className="relative flex items-center gap-2"
+          >
+            <span className="text-sm text-gray-600">Scan Receipt</span>
+
+            <InfoIcon className="w-4 h-4 text-gray-600 opacity-50 cursor-pointer" />
+            {showTooltip && (
+              <div className="absolute right-0 bottom-8 bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs text-gray-700 w-64 z-20">
+                Scan your receipt to automatically fill in the transaction
+                details.
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -105,7 +127,7 @@ const TransactionForm = () => {
           >
             Transaction Type
           </label>
-          <TransactionDropdown 
+          <TransactionDropdown
             selected={formData.transactionType}
             onSelect={handleTransactionTypeChange}
           />
@@ -152,13 +174,11 @@ const TransactionDropdown = ({ selected, onSelect }) => {
 
   return (
     <Ariakit.MenuProvider>
-      <Ariakit.MenuButton 
-        className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 hover:bg-gray-50 focus:border-[#00AB6B] focus:outline-none focus:ring-1 focus:ring-[#00AB6B] cursor-pointer"
-      >
+      <Ariakit.MenuButton className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 hover:bg-gray-50 focus:border-[#00AB6B] focus:outline-none focus:ring-1 focus:ring-[#00AB6B] cursor-pointer">
         <span>{selected}</span>
         <svg
           className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${
-            menu.open ? 'rotate-180' : ''
+            menu.open ? "rotate-180" : ""
           }`}
           fill="none"
           viewBox="0 0 24 24"
@@ -172,7 +192,7 @@ const TransactionDropdown = ({ selected, onSelect }) => {
           />
         </svg>
       </Ariakit.MenuButton>
-      <Ariakit.Menu 
+      <Ariakit.Menu
         gutter={4}
         className="z-50 max-h-[280px] w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg focus:outline-none"
       >

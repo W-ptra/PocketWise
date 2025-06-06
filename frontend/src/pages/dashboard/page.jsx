@@ -13,35 +13,13 @@ import ComparisonPieChart from "./_components/ComparisonPieChart";
 
 // Sample data - replace with actual data from your API
 const chartData = [
-  { date: "01/05", income: 1500000, expense: 1200000, investment: 1500000 },
-  { date: "05/05", income: 1800000, expense: 1400000, investment: 1600000 },
-  { date: "10/05", income: 1600000, expense: 1100000, investment: 1400000 },
-  { date: "15/05", income: 2000000, expense: 1600000, investment: 1800000 },
-  { date: "20/05", income: 1900000, expense: 1300000, investment: 1700000 },
-  { date: "25/05", income: 1700000, expense: 1500000, investment: 1500000 },
-  { date: "30/05", income: 1500000, expense: 1200000, investment: 1400000 },
-];
-
-const topExpenses = [
-  { name: "MacBook M3", amount: -20000000, category: "Kebutuhan Kerja" },
-  { name: "OS Shell I", amount: -10000000, category: "Kebutuhan Kerja" },
-  { name: "Beras 2 kg", amount: -5000000, category: "Kebutuhan Pokok" },
-  { name: "Sun M3 BB", amount: -210000, category: "Kebutuhan Pokok" },
-  { name: "Casing Samsung A55", amount: -45000, category: "Kebutuhan Kerja" },
-  { name: "MacBook M3", amount: -20000000, category: "Kebutuhan Kerja" },
-  { name: "OS Shell I", amount: -10000000, category: "Kebutuhan Kerja" },
-  { name: "Beras 2 kg", amount: -5000000, category: "Kebutuhan Pokok" },
-];
-
-const topIncome = [
-  { name: "MacBook M3", amount: 20000000 },
-  { name: "OS Shell I", amount: 10000000 },
-  { name: "Beras 2 kg", amount: 5000000 },
-  { name: "Sun M3 BB", amount: 210000 },
-  { name: "Casing Samsung A55", amount: 45000 },
-  { name: "Beras 2 kg", amount: 5000000 },
-  { name: "Sun M3 BB", amount: 210000 },
-  { name: "Casing Samsung A55", amount: 45000 },
+  { date: "01/05/2024", income: 1500000, expense: 1200000, investment: 1500000 },
+  { date: "05/05/2024", income: 1800000, expense: 1400000, investment: 1600000 },
+  { date: "10/05/2024", income: 1600000, expense: 1100000, investment: 1400000 },
+  { date: "15/05/2024", income: 2000000, expense: 1600000, investment: 1800000 },
+  { date: "20/05/2024", income: 1900000, expense: 1300000, investment: 1700000 },
+  { date: "25/05/2024", income: 1700000, expense: 1500000, investment: 1500000 },
+  { date: "30/05/2024", income: 1500000, expense: 1200000, investment: 1400000 },
 ];
 
 const distributionData = [
@@ -51,24 +29,90 @@ const distributionData = [
   { name: "Lainnya", value: 10 },
 ];
 
-const nowComparisonData = [
-  { name: "Kebutuhan pokok", value: 40 },
-  { name: "Jajan", value: 30 },
-  { name: "Investasi", value: 20 },
-  { name: "Lainnya", value: 10 },
-];
-
-const lastComparisonData = [
-  { name: "Kebutuhan pokok", value: 30 },
-  { name: "Jajan", value: 20 },
-  { name: "Investasi", value: 10 },
-  { name: "Lainnya", value: 40 },
-];
-
 function DashboardPage() {
   const [profileImage, setProfileImage] = useState("/logo/User.png");
+  const [comparasionExpense,setComparasionExpense] = useState([]);
+  const [comparasionIncome,setComparasionIncome] = useState([]);
+  const [topExpenses,setTopExpenses] = useState([]);
+  const [topIncome,setTopIncome] = useState([]);
+  const [saldo,setSaldo] = useState(0);
+
+  const fetchTopExpenses = async () => {
+    const result = await getRequest("api/transaction?type=top-expense",getToken());
+    if(result.error) return;
+
+    const processTransactionData = result.data.data.map(transaction => {
+      return {
+        name: transaction.title,
+        category: transaction.transactionType.name,
+        amount: transaction.amount
+      }
+    });
+
+    setTopExpenses(processTransactionData);
+  }
+
+  const fetchTopIncome = async () => {
+    const result = await getRequest("api/transaction?type=top-income",getToken());
+    if(result.error) return;
+
+    const processTransactionData = [];
+    const comparisionIncome = [];
+
+    result.data.data.forEach(transaction => {
+      const transactionData = {
+        name: transaction.title,
+        category: transaction.transactionType.name,
+        amount: parseInt(transaction.amount)
+      }
+      
+      const incomeData = {
+        name: transaction.title,
+        value: parseInt(transaction.amount)
+      }
+
+      comparisionIncome.push(incomeData);
+      processTransactionData.push(transactionData);
+    });
+
+    console.log(comparisionIncome);
+    setComparasionIncome(comparisionIncome);
+    setTopIncome(processTransactionData);
+  }
+
+  const fetchComparisionExpense = async () => {
+    const result = await getRequest("api/transaction/comparision?timeRange=month&type=top-expense",getToken());
+    if(result.error) return;
+
+    let comparisionExpenseData = [];
+
+    for(const key in result.data){
+      if(key !== "total"){
+        const expenseData = {
+          name: key,
+          value: result.data[key]
+        }
+        comparisionExpenseData.push(expenseData)
+      }
+    }
+
+    setComparasionExpense(comparisionExpenseData);
+  }
+
+  const fetchSaldo = async () => {
+    const result = await getRequest("api/saldo",getToken());
+    if(result.error) return;
+
+    setSaldo(result.data.amount);
+  }
+
 
   useEffect(() => {
+    fetchComparisionExpense();
+    fetchTopExpenses();
+    fetchTopIncome();
+    fetchSaldo();
+
     async function fetchProfileImage() {
       try {
         const token = getToken();
@@ -110,8 +154,8 @@ function DashboardPage() {
             <ExpenseChart data={chartData} />
           </div>
           <div className="grid grid-cols-1 gap-6">
+            <BalanceCard balance={saldo} />
             <ExpenseDistribution data={distributionData} title="Pengeluaran" />
-            <BalanceCard balance={5142567} />
           </div>
         </div>
 
@@ -142,12 +186,12 @@ function DashboardPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <ComparisonPieChart
-            data={nowComparisonData}
+            data={comparasionExpense}
             title="Perbandingan Pengeluaran April 2025"
           />
           <ComparisonPieChart
-            data={lastComparisonData}
-            title="Perbandingan Pengeluaran April 2025"
+            data={comparasionIncome}
+            title="Perbandingan Pemasukan April 2025"
           />
         </div>
       </div>

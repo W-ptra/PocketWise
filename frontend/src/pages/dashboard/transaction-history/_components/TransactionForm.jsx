@@ -61,13 +61,13 @@ const TransactionForm = () => {
             onMouseLeave={() => setShowTooltip(false)}
             className="relative flex items-center gap-2"
           >
-            <span className="text-sm text-gray-600">Scan Receipt</span>
+            <span className="text-sm text-gray-600">Scan/Upload Receipt</span>
 
             <InfoIcon className="w-4 h-4 text-gray-600 opacity-50 cursor-pointer" />
             {showTooltip && (
               <div className="absolute right-0 bottom-8 bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs text-gray-700 w-64 z-20">
-                Scan your receipt to automatically fill in the transaction
-                details.
+                Scan or upload your receipt to automatically fill in the
+                transaction details.
               </div>
             )}
           </div>

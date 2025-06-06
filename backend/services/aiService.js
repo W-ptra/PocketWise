@@ -64,24 +64,79 @@ async function getDailyJournal(request,h) {
     }
 
     const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
+    const journal_entry = formatMlDayRequest(transactions);
 
-    console.log(transactions.length)
-    if(transactions.length === 0){
+    const mlJournalCache = await getMlJournal(`${journalType}:${timeRange}`,journal_entry)
+
+    if(mlJournalCache){
         return h
             .response({
-                message: "transaction record is empty",
+                message: "successfully retrive month journal",
+                data: mlJournalCache
+            })
+            .code(200);
+    }
+
+    if(journal_entry.length < 7){
+        return h
+            .response({
+                message: "expense record must at least 7 or more",
             })
             .code(404);
     }
 
+        const option = {
+        method: "POST",
+        headers: {
+            "Content-Type":"application/json"
+        },
+        body: JSON.stringify({journal_entry})
+    }
+    
+    const result = await fetch(`${ML_HOST}/journal/day?time=${timeRange}`,option);
+    const data = await result.json();
+
+    const respond = {
+        prediction: data.predicted_expense_next_7_days,
+        prediction_raw: data.raw_values
+    }
+
+    setMlJournal(`${journalType}:${timeRange}`,journal_entry,respond);
 
     return h
-            .response({
-                message: "transaction record is empty",
-            })
-            .code(404);
+        .response({
+            message: "successfully retrive month journal",
+            data: respond
+        })
+        .code(200);
 }
 
+function formatMlDayRequest(transactions) {
+    let dateTotalExpense = {};
+    
+    transactions.forEach(transaction => {
+        const date = new Date(transaction.createdAt).toISOString().split('T')[0];
+
+        let amount = typeof transaction.amount === "number"
+            ? transaction.amount
+            : parseInt(transaction.amount);
+
+        amount = amount > 0 ? amount : -amount;
+
+        dateTotalExpense[date] = (dateTotalExpense[date] || 0) + amount;
+    });
+
+    let journal_entry = [];
+    
+    for (key in dateTotalExpense){
+        journal_entry.push({
+            Date: key,
+            Total_Expense: dateTotalExpense[key]
+        })
+    }
+    
+    return journal_entry;
+}
 
 async function getMonthJournay(request,h) {
     const journalType = "monthly";
@@ -113,18 +168,18 @@ async function getMonthJournay(request,h) {
             .code(404);
     }
 
-    const mlJournalCache = await getMlJournal(journalType,transactions)
+    const mlJournalCache = await getMlJournal(`ml:${journalType}:${transactions}`,transactions)
 
-    // if (mlJournalCache){
-    //     return h
-    //         .response({
-    //         message: "successfully retrive month journal",
-    //         data: mlJournalCache,
-    //         })
-    //         .code(200);
-    // }
+    if (mlJournalCache){
+        return h
+            .response({
+            message: "successfully retrive month journal",
+            data: mlJournalCache,
+            })
+            .code(200);
+    }
 
-    const journal_entry = formatMlRequest(transactions);
+    const journal_entry = formatMlMonthlyRequest(transactions);
 
     const option = {
         method: "POST",
@@ -147,7 +202,7 @@ async function getMonthJournay(request,h) {
         .code(200);
 }
 
-function formatMlRequest(transactions){
+function formatMlMonthlyRequest(transactions){
     const journal_entry = {
       Income: 0,
       Rent: 0,
@@ -163,7 +218,6 @@ function formatMlRequest(transactions){
     }
 
     transactions.forEach(transaction => {
-        console.log(transaction);
         const type = transaction.transactionType.name;
         const amount = Math.abs(transaction.amount);
         if (journal_entry.hasOwnProperty(type)) {

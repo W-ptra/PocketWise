@@ -6,10 +6,9 @@ import { getRequest } from "~utils/api";
 import BalanceCard from "./_components/BalanceCard";
 import ExpenseChart from "./_components/ExpenseChart";
 import TransactionList from "./_components/TransactionList";
-import ExpenseDistribution from "./_components/ExpenseDistribution";
+import DistributionChart from "./_components/DistributionChart";
 import AISuggestions from "./_components/AISuggestions";
 import InvestmentSuggestions from "./_components/InvestmentSuggestions";
-import ComparisonPieChart from "./_components/ComparisonPieChart";
 
 // Sample data - replace with actual data from your API
 const chartData = [
@@ -198,7 +197,7 @@ function DashboardPage() {
           </div>
           <div className="grid grid-cols-1 gap-6">
             <BalanceCard balance={saldo} />
-            <ExpenseDistribution data={distributionData} title="Pengeluaran" />
+            <DistributionChart data={distributionData} title="Pengeluaran" />
           </div>
         </div>
 
@@ -208,22 +207,6 @@ function DashboardPage() {
           </div>
           <div className="col-span-2 row-start-2 row-span-2">
             <InvestmentSuggestions />
-          </div>
-          <div className="col-start-3 row-span-3 h-full">
-            <div className="grid grid-rows-2 grid-cols-1 gap-6 h-full">
-              <div className="h-full">
-                <TransactionList
-                  transactions={topExpenses}
-                  title="Top Pengeluaran Mei 2025"
-                />
-              </div>
-              <div className="h-full">
-                <TransactionList
-                  transactions={topIncome}
-                  title="Top Pendapatan Mei 2025"
-                />
-              </div>
-            </div>
           </div>
         </div>
       </div>

@@ -14,7 +14,7 @@ function AISuggestions() {
       </div>
       <div className="absolute left-0 top-0 h-full w-2 bg-gradient-to-b from-[#00AB6B] via-[#4ECDC4] to-[#FFB86B] rounded-l-xl z-10" />
       <div className="flex-1 pl-6 z-10">
-        <h2 className="text-gray-700 font-bold text-xl flex items-center gap-2 mb-2">
+        <h2 className="text-gray-600 font-bold text-xl flex items-center gap-2 mb-2">
           <Sparkles className="w-6 h-6 text-[#00AB6B] animate-pulse" />
           AI Analysis & Suggestions
           <span className="bg-gradient-to-r from-[#00AB6B] to-[#4ECDC4] text-white text-xs font-bold px-2 py-0.5 rounded-full shadow animate-bounce">NEW</span>

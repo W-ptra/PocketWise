@@ -14,13 +14,13 @@ const generateRandomChartData = (base) => {
 };
 
 const DUMMY_CHART_DATA_BASE = [
-  { date: "01/05", income: 1500000, expense: 1200000, investment: 300000 },
-  { date: "05/05", income: 1800000, expense: 1400000, investment: 350000 },
-  { date: "10/05", income: 1600000, expense: 1100000, investment: 250000 },
-  { date: "15/05", income: 2000000, expense: 1600000, investment: 400000 },
-  { date: "20/05", income: 1900000, expense: 1300000, investment: 380000 },
-  { date: "25/05", income: 1700000, expense: 1500000, investment: 320000 },
-  { date: "30/05", income: 2100000, expense: 1250000, investment: 450000 },
+  { date: "01/05", income: 1500000, expense: 1200000 },
+  { date: "05/05", income: 1800000, expense: 1400000 },
+  { date: "10/05", income: 1600000, expense: 1100000 },
+  { date: "15/05", income: 2000000, expense: 1600000 },
+  { date: "20/05", income: 1900000, expense: 1300000 },
+  { date: "25/05", income: 1700000, expense: 1500000 },
+  { date: "30/05", income: 2100000, expense: 1250000 },
 ];
 
 const DUMMY_DATA = {
@@ -76,7 +76,6 @@ function ExpenseChart() {
     const [visibility, setVisibility] = useState({
         income: true,
         expense: true,
-        investment: true,
     });
     const [activeFilter, setActiveFilter] = useState('All');
 
@@ -152,7 +151,7 @@ function ExpenseChart() {
             </div>
 
             {isLoading && (
-              <div className="bg-white p-6 rounded-xl shadow-sm h-[458px] flex justify-center items-center">
+              <div className="bg-white p-6 rounded-xl shadow-sm flex justify-center items-center">
                 <LoadingSpinner />
               </div>
             )}

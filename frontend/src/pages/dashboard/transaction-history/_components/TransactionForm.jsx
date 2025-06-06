@@ -66,6 +66,7 @@ const TransactionForm = () => {
             </div>
             <input
               type="number"
+              min="0"
               name="amount"
               id="amount"
               value={formData.amount}

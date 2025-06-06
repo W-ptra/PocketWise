@@ -183,17 +183,6 @@ function DashboardPage() {
             </div>
           </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ComparisonPieChart
-            data={comparasionExpense}
-            title="Perbandingan Pengeluaran April 2025"
-          />
-          <ComparisonPieChart
-            data={comparasionIncome}
-            title="Perbandingan Pemasukan April 2025"
-          />
-        </div>
       </div>
       <Footer />
     </div>

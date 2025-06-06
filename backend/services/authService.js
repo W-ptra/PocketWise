@@ -1,5 +1,5 @@
 const { createUser, upsertUser, getUserByEmail, updatePassword } = require("../database/postgres/userDatabase");
-const { createNewSaldo } = require("../database/postgres/saldoDatabase");
+const { createNewSaldo, getSaldoByUserId } = require("../database/postgres/saldoDatabase");
 const { hashPassword, comparePassword } = require("../utils/hashing");
 const { sendPasswordResetEmail } = require("../utils/email");
 const { isInputInvalid } = require("../utils/validation");
@@ -195,7 +195,12 @@ async function handleGoogleOauthCallback(request, h) {
     const userInfo = await userInfoResponse.json();
     
     const user = await upsertUserFromGoogleOauth(userInfo);
-    console.log(user)
+
+    const isUserAlreadyHaveSaldo = await getSaldoByUserId(user.id);
+    if (isUserAlreadyHaveSaldo === null){
+        await createNewSaldo(user.id);
+    }
+
     const jwtToken = generateJwt(user);
     const redirectUrl = `${frontendHost}/auth/google/callback?token=${jwtToken}`;
 

@@ -15,6 +15,7 @@ function TransactionList({ transactions, title }) {
                         }`}>
                             Rp{new Intl.NumberFormat('id-ID').format(Math.abs(transaction.amount))}
                         </span>
+                        
                     </div>
                 ))}
             </div>

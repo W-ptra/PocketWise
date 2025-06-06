@@ -17,18 +17,23 @@ async function getAllTransaction(request, h) {
   const user = request.user;
 
   const queryOption = {
-    size,
-    pageSize,
+    page = 1,
+    pageSize = 10,
     type,
     timeRange,
-    limit
+    limit,
+    pagination
   } = request.query;
+
+  pagination = pagination === undefined || pagination === "true" ? true : false;
+
+  console.log(pagination);
 
   queryOption["userId"] = user.id;
   queryOption.page = typeof(queryOption.page) === "number" ? queryOption.page : parseInt(queryOption.page);
   queryOption.pageSize = typeof(queryOption.pageSize) === "number" ? queryOption.pageSize : parseInt(queryOption.pageSize);
 
-  const transactions = await getTransactionsByUserId(queryOption);
+  const transactions = pagination ? await getTransactionsByUserId(queryOption) : await getTransactionByUserIdWithoutPagination(queryOption);
 
   if(transactions.length === 0){
     return h
@@ -158,7 +163,6 @@ function processTransactions(transactions) {
     };
   });
 }
-
 
 async function updateTransactions(request, h) {
   try {
@@ -340,7 +344,7 @@ function getTotalAmount(transactions){
 async function updateSaldo(userId,amounts){
   try{
   const saldo = await getSaldoByUserId(userId);
-
+  console.log(userId,saldo,amounts);
   const saldoTotalAmount = parseInt(saldo.amount) + parseInt(amounts);
   await updateSaldoByUserId(userId,saldoTotalAmount);
   }catch(err){
@@ -355,8 +359,11 @@ function getTransactionTypeComparationFromTransaction(transactions){
     if (!comparation[transaction.transactionType.name]) {
       comparation[transaction.transactionType.name] = 0;
     }
-    comparation[transaction.transactionType.name]++;
-    total++;
+    let amount = typeof(transaction.amount) === "number" ? transaction.amount : parseInt(transaction.amount);
+    amount = amount > 0 ? amount : (amount * -1);
+
+    comparation[transaction.transactionType.name] += amount;
+    total += amount;
   })
   comparation["total"]=total;
   return comparation;

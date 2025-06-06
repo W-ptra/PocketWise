@@ -113,7 +113,7 @@ async function getMonthJournay(request,h) {
             .code(404);
     }
 
-    //const mlJournalCache = await getMlJournal(journalType,transactions)
+    const mlJournalCache = await getMlJournal(journalType,transactions)
 
     // if (mlJournalCache){
     //     return h
@@ -125,7 +125,7 @@ async function getMonthJournay(request,h) {
     // }
 
     const journal_entry = formatMlRequest(transactions);
-  
+
     const option = {
         method: "POST",
         headers: {
@@ -137,7 +137,7 @@ async function getMonthJournay(request,h) {
     const result = await fetch(`${ML_HOST}/journal/month`,option);
     const data = await result.json();
 
-    //setMlJournal(journalType,transactions,data);
+    setMlJournal(journalType,transactions,data);
 
     return h
         .response({

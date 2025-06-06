@@ -27,15 +27,18 @@ async function getSingleTransactionByUserId(userId, transactionId) {
 
 async function getTransactionByUserIdWithoutPagination(option = {}) {
   const queryOption = queryOptionBuilderWithoutPagination(option);
-
+  console.log(queryOption)
   try {
     const data = await prisma.transaction.findMany({
       ...queryOption,
       select: {
+        id: true,
+        title: true,
+        amount: true,
+        createdAt: true,
         transactionType: true,
       },
     });
-
     return data;
   } catch (err) {
     console.log(err);
@@ -44,10 +47,12 @@ async function getTransactionByUserIdWithoutPagination(option = {}) {
 }
 
 async function getTransactionsByUserId(option = {}) {
-  const { userId, page = 1, pageSize = 10 } = option;
+  let { userId, page = 1, pageSize = 10 } = option;
+  page = page || 1;
+  pageSize = pageSize || 10;
 
   const queryOption = queryOptionBuilder(option);
-
+  console.log(queryOption);
   try {
     const [data, total] = await Promise.all([
       prisma.transaction.findMany({
@@ -59,12 +64,14 @@ async function getTransactionsByUserId(option = {}) {
           createdAt: true,
           transactionType: true,
         },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
       }),
       prisma.transaction.count({
         where: { userId },
       }),
     ]);
-
+    
     return {
       data,
       total,
@@ -126,7 +133,7 @@ function queryOptionBuilder(option = {}) {
     timeRange,
     limit,
   } = option;
-
+  console.log(option)
   let amountFilter;
   let createdAtFilter;
   let orderBy;
@@ -164,7 +171,7 @@ function queryOptionBuilder(option = {}) {
       ...(createdAtFilter && { createdAt: createdAtFilter }),
     },
     orderBy,
-    ...(type ? { take: parseInt(limit) || 5 } : {
+    ...(type ? { take: parseInt(limit) || 8 } : {
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
@@ -177,6 +184,8 @@ function queryOptionBuilderWithoutPagination(option = {}) {
     type,
     timeRange,
   } = option;
+
+  console.log(type,timeRange)
 
   let amountFilter;
   let createdAtFilter;
@@ -192,7 +201,7 @@ function queryOptionBuilderWithoutPagination(option = {}) {
     orderBy = { createdAt: "desc" };
   }
 
-  if (type && ["top-expense", "top-income"].includes(type) && timeRange) {
+  if (timeRange) {
     if (timeRange === "day") {
       createdAtFilter = {
         gte: dayjs().subtract(1, "day").startOf("day").toDate(),
@@ -207,6 +216,7 @@ function queryOptionBuilderWithoutPagination(option = {}) {
       };
     }
   }
+
   return {
     where: {
       userId,

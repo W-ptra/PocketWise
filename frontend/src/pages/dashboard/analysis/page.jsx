@@ -9,7 +9,7 @@ function Analysis(){
 
 
     const fetchMonthlyJournal =  async () => {
-        const result = await getRequest("api/ai/journal",getToken());
+        const result = await getRequest("api/ai/journal/month",getToken());
         console.log(result);
         setMonthlyJournal(result.data);
     }

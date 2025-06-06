@@ -24,30 +24,30 @@ def saran_tabungan(user_data, categories):
     )
     return saran_text
 
-def process_journal(request, model, scaler, categories):
+def process_journal_month(request, model, scaler, categories):
     try:
         journal_entry = request.json.get('journal_entry')
-
+        
         if not journal_entry or 'Income' not in journal_entry:
             return jsonify({'error': 'Invalid journal_entry or missing Income'}), 400
 
         income = journal_entry['Income']
         user_data = {cat: journal_entry.get(cat, 0) for cat in categories}
         user_data['Income'] = income
-
+        
         user_prop = np.array([user_data[cat] / income for cat in categories]).reshape(1, -1)
         user_scaled = scaler.transform(user_prop)
         pred_scaled = model.predict(user_scaled)
         pred_prop = scaler.inverse_transform(pred_scaled)
         rekomendasi_nominal = pred_prop.flatten() * income
-
+        
         feedback_list = []
         threshold_nominal = 50000
         for i, cat in enumerate(categories):
             user_pct = user_prop[0, i] * 100
             rec_pct = pred_prop[0, i] * 100
             gap_nominal = (pred_prop[0, i] - user_prop[0, i]) * income
-
+            
             if gap_nominal > threshold_nominal:
                 feedback = f"• Pengeluaranmu untuk {cat} cukup rendah ({user_pct:.1f}% vs saran {rec_pct:.1f}%). Boleh dipertimbangkan naik hingga Rp{int(rekomendasi_nominal[i]):,}."
             elif gap_nominal < -threshold_nominal:
@@ -55,7 +55,7 @@ def process_journal(request, model, scaler, categories):
             else:
                 feedback = f"• Pengeluaranmu untuk {cat} sudah sesuai saran."
             feedback_list.append(feedback)
-
+        
         rekomendasi = {
             cat: int(nominal)
             for cat, nominal in zip(categories, rekomendasi_nominal)

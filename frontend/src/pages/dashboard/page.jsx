@@ -9,6 +9,7 @@ import TransactionList from "./_components/TransactionList";
 import DistributionChart from "./_components/DistributionChart";
 import AISuggestions from "./_components/AISuggestions";
 import InvestmentSuggestions from "./_components/InvestmentSuggestions";
+import UserCategory from "./_components/UserCategory";
 
 // Sample data - replace with actual data from your API
 const chartData = [
@@ -202,6 +203,9 @@ function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-3 grid-rows-3 gap-6 min-h-[600px]">
+          <div className="col-span-1 row-span-1">
+            <UserCategory />
+          </div>
           <div className="col-span-2 row-span-1 col-start-2">
             <AISuggestions />
           </div>

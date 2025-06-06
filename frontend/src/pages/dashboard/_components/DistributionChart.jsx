@@ -12,6 +12,12 @@ import {
   Soup,
   Utensils,
   Wrench,
+  Briefcase,
+  Gift,
+  Banknote,
+  TrendingUp,
+  Wallet,
+  BanknoteArrowUp,
 } from "lucide-react";
 import {
   PieChart,
@@ -27,18 +33,45 @@ import DateDropdown from "./DateDropdown";
 import LoadingSpinner from "../../../components/LoadingSpinner";
 
 const CATEGORY_COLORS = {
-  Rent: "#4B5563",
-  Loan_Repayment: "#D97706",
-  Insurance: "#0EA5E9",
-  Groceries: "#22C55E",
-  Transport: "#3B82F6",
-  Eating: "#F97316",
-  Eating_Out: "#EA580C",
-  Entertainment: "#8B5CF6",
-  Utilities: "#6B7280",
-  Healthcare: "#EF4444",
-  Education: "#6366F1",
-  default: "#9CA3AF",
+  // Expenses
+  Rent: "#64748B",
+  Loan_Repayment: "#F59E0B",
+  Insurance: "#38BDF8",
+  Groceries: "#4ADE80",
+  Transport: "#60A5FA",
+  Eating: "#FB923C",
+  Eating_Out: "#F87171",
+  Entertainment: "#A78BFA",
+  Utilities: "#94A3B8",
+  Healthcare: "#FB7185",
+  Education: "#818CF8",
+  // Income
+  Salary: "#10B981",
+  Investments: "#F59E0B",
+  Freelance: "#6366F1",
+  Gifts: "#EC4899",
+  Other: "#8B5CF6",
+  default: "#CBD5E1",
+};
+
+const DUMMY_DATA_BASE = {
+  expenses: [
+    { name: "Rent", value: 2500000 },
+    { name: "Groceries", value: 1800000 },
+    { name: "Transport", value: 800000 },
+    { name: "Entertainment", value: 500000 },
+    { name: "Utilities", value: 750000 },
+    { name: "Healthcare", value: 400000 },
+    { name: "Education", value: 1200000 },
+    { name: "Eating_Out", value: 900000 },
+  ],
+  income: [
+    { name: "Salary", value: 8000000 },
+    { name: "Investments", value: 2000000 },
+    { name: "Freelance", value: 1500000 },
+    { name: "Gifts", value: 500000 },
+    { name: "Other", value: 300000 },
+  ],
 };
 
 const generateRandomData = (base) => {
@@ -48,115 +81,139 @@ const generateRandomData = (base) => {
   }));
 };
 
-const DUMMY_DATA_BASE = [
-  { name: "Rent", value: 2500000 },
-  { name: "Groceries", value: 1800000 },
-  { name: "Transport", value: 800000 },
-  { name: "Entertainment", value: 500000 },
-  { name: "Utilities", value: 750000 },
-  { name: "Healthcare", value: 400000 },
-  { name: "Education", value: 1200000 },
-  { name: "Eating_Out", value: 900000 },
-];
-
 const DUMMY_DATA = {
-  today: generateRandomData(DUMMY_DATA_BASE),
-  last_week: generateRandomData(DUMMY_DATA_BASE),
-  last_month: generateRandomData(DUMMY_DATA_BASE),
-  "1_year": generateRandomData(DUMMY_DATA_BASE),
-  all_time: generateRandomData(DUMMY_DATA_BASE),
+  today: {
+    expenses: generateRandomData(DUMMY_DATA_BASE.expenses),
+    income: generateRandomData(DUMMY_DATA_BASE.income),
+  },
+  last_week: {
+    expenses: generateRandomData(DUMMY_DATA_BASE.expenses),
+    income: generateRandomData(DUMMY_DATA_BASE.income),
+  },
+  last_month: {
+    expenses: generateRandomData(DUMMY_DATA_BASE.expenses),
+    income: generateRandomData(DUMMY_DATA_BASE.income),
+  },
+  "1_year": {
+    expenses: generateRandomData(DUMMY_DATA_BASE.expenses),
+    income: generateRandomData(DUMMY_DATA_BASE.income),
+  },
+  all_time: {
+    expenses: generateRandomData(DUMMY_DATA_BASE.expenses),
+    income: generateRandomData(DUMMY_DATA_BASE.income),
+  },
 };
 
-const fetchExpenseDistribution = async (timeframe = "today") => {
-  console.log(`Fetching expense distribution for timeframe: ${timeframe}`);
-  await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate network delay
-  return DUMMY_DATA[timeframe];
+const fetchExpenseDistribution = async (timeframe = "today", type = "expenses") => {
+  console.log(`Fetching ${type} distribution for timeframe: ${timeframe}`);
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  return DUMMY_DATA[timeframe][type];
 };
 
 function giveIconByCategory(category) {
   switch (category) {
+    // Expenses
     case "Rent":
       return (
         <div className="border-2 border-gray-300 rounded-full p-2">
-          <House style={{ color: "#4B5563" }} className="w-4 h-4" />{" "}
-          {/* Gray - represents shelter/home */}
+          <House style={{ color: "#64748B" }} className="w-4 h-4" />
         </div>
       );
     case "Loan_Repayment":
       return (
         <div className="border-2 border-gray-300 rounded-full p-2">
-          <CircleDollarSign style={{ color: "#D97706" }} className="w-4 h-4" />{" "}
-          {/* Amber - caution/debt */}
+          <CircleDollarSign style={{ color: "#F59E0B" }} className="w-4 h-4" />
         </div>
       );
     case "Insurance":
       return (
         <div className="border-2 border-gray-300 rounded-full p-2">
-          <ShieldPlus style={{ color: "#0EA5E9" }} className="w-4 h-4" />{" "}
-          {/* Sky blue - safety and trust */}
+          <ShieldPlus style={{ color: "#38BDF8" }} className="w-4 h-4" />
         </div>
       );
     case "Groceries":
       return (
         <div className="border-2 border-gray-300 rounded-full p-2">
-          <LeafyGreen style={{ color: "#22C55E" }} className="w-4 h-4" />{" "}
-          {/* Green - fresh food */}
+          <LeafyGreen style={{ color: "#4ADE80" }} className="w-4 h-4" />
         </div>
       );
     case "Transport":
       return (
         <div className="border-2 border-gray-300 rounded-full p-2">
-          <Bus style={{ color: "#3B82F6" }} className="w-4 h-4" />{" "}
-          {/* Blue - mobility */}
+          <Bus style={{ color: "#60A5FA" }} className="w-4 h-4" />
         </div>
       );
     case "Eating":
       return (
         <div className="border-2 border-gray-300 rounded-full p-2">
-          <Utensils style={{ color: "#F97316" }} className="w-4 h-4" />{" "}
-          {/* Orange - food/warmth */}
+          <Utensils style={{ color: "#FB923C" }} className="w-4 h-4" />
         </div>
       );
     case "Eating_Out":
       return (
         <div className="border-2 border-gray-300 rounded-full p-2">
-          <Soup style={{ color: "#EA580C" }} className="w-4 h-4" />{" "}
-          {/* Deep orange - restaurants */}
+          <Soup style={{ color: "#F87171" }} className="w-4 h-4" />
         </div>
       );
     case "Entertainment":
       return (
         <div className="border-2 border-gray-300 rounded-full p-2">
-          <Clapperboard style={{ color: "#8B5CF6" }} className="w-4 h-4" />{" "}
-          {/* Violet - fun/creativity */}
+          <Clapperboard style={{ color: "#A78BFA" }} className="w-4 h-4" />
         </div>
       );
     case "Utilities":
       return (
         <div className="border-2 border-gray-300 rounded-full p-2">
-          <Wrench style={{ color: "#6B7280" }} className="w-4 h-4" />{" "}
-          {/* Neutral gray - infrastructure */}
+          <Wrench style={{ color: "#94A3B8" }} className="w-4 h-4" />
         </div>
       );
     case "Healthcare":
       return (
         <div className="border-2 border-gray-300 rounded-full p-2">
-          <HeartPlus style={{ color: "#EF4444" }} className="w-4 h-4" />{" "}
-          {/* Red - health */}
+          <HeartPlus style={{ color: "#FB7185" }} className="w-4 h-4" />
         </div>
       );
     case "Education":
       return (
         <div className="border-2 border-gray-300 rounded-full p-2">
-          <GraduationCap style={{ color: "#6366F1" }} className="w-4 h-4" />{" "}
-          {/* Indigo - wisdom */}
+          <GraduationCap style={{ color: "#818CF8" }} className="w-4 h-4" />
+        </div>
+      );
+    // Income
+    case "Salary":
+      return (
+        <div className="border-2 border-gray-300 rounded-full p-2">
+          <Briefcase style={{ color: "#10B981" }} className="w-4 h-4" />
+        </div>
+      );
+    case "Investments":
+      return (
+        <div className="border-2 border-gray-300 rounded-full p-2">
+          <TrendingUp style={{ color: "#F59E0B" }} className="w-4 h-4" />
+        </div>
+      );
+    case "Freelance":
+      return (
+        <div className="border-2 border-gray-300 rounded-full p-2">
+          <Banknote style={{ color: "#6366F1" }} className="w-4 h-4" />
+        </div>
+      );
+    case "Gifts":
+      return (
+        <div className="border-2 border-gray-300 rounded-full p-2">
+          <Gift style={{ color: "#EC4899" }} className="w-4 h-4" />
+        </div>
+      );
+    case "Other":
+      return (
+        <div className="border-2 border-gray-300 rounded-full p-2">
+          <Wallet style={{ color: "#8B5CF6" }} className="w-4 h-4" />
         </div>
       );
     default:
       return (
         <div className="border-2 border-gray-300 rounded-full p-1">
-          <Info style={{ color: "#9CA3AF" }} className="w-4 h-4" />{" "}
-          {/* Light gray - unknown */}
+          <Info style={{ color: "#CBD5E1" }} className="w-4 h-4" />
         </div>
       );
   }
@@ -199,17 +256,18 @@ const CustomTooltip = ({ active, payload }) => {
   return null;
 };
 
-function ExpenseDistribution({ title = "Expense Distribution" }) {
+function DistributionChart({ title = "Distribution" }) {
   const [timeframe, setTimeframe] = useState("today");
+  const [type, setType] = useState("expenses");
 
   const {
-    data: expenseData,
+    data: distributionData,
     isLoading,
     isError,
     error,
   } = useQuery({
-    queryKey: ["expenseDistribution", timeframe],
-    queryFn: () => fetchExpenseDistribution(timeframe),
+    queryKey: ["distribution", timeframe, type],
+    queryFn: () => fetchExpenseDistribution(timeframe, type),
     staleTime: 5 * 60 * 1000,
     keepPreviousData: true,
   });
@@ -218,7 +276,7 @@ function ExpenseDistribution({ title = "Expense Distribution" }) {
     setTimeframe(selectedTimeframe);
   };
 
-  if (isLoading && !expenseData) {
+  if (isLoading && !distributionData) {
     return (
       <div className="bg-white p-6 rounded-xl shadow-sm flex items-center justify-center">
         <LoadingSpinner />
@@ -234,8 +292,8 @@ function ExpenseDistribution({ title = "Expense Distribution" }) {
     );
   }
 
-  const total = expenseData.reduce((acc, curr) => acc + curr.value, 0);
-  const data = expenseData
+  const total = distributionData.reduce((acc, curr) => acc + curr.value, 0);
+  const data = distributionData
     .map((item) => ({
       ...item,
       percentage: (item.value / total) * 100,
@@ -244,10 +302,39 @@ function ExpenseDistribution({ title = "Expense Distribution" }) {
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm relative">
-      <div className="flex justify-between items-center">
-        <div className="flex justify-between gap-2">
-          <BanknoteArrowDown className="w-6 h-6 text-red-500" />
-          <h2 className="text-xl font-bold text-gray-600">Expenses</h2>
+      <div className="flex justify-between items-center mb-1  ">
+        <div className="flex items-center gap-4">
+          <div className="flex justify-between gap-2">
+            <div className={`p-2 rounded-lg ${type === 'expenses' ? 'bg-red-50' : 'bg-green-50'}`}>
+              {type === 'expenses' ? (
+                <BanknoteArrowDown className="w-6 h-6 text-red-500" />
+              ) : (
+                <BanknoteArrowUp className="w-6 h-6 text-green-500" />
+              )}
+            </div>
+          </div>
+          <div className="flex rounded-lg border border-gray-200 p-1">
+            <button
+              onClick={() => setType('expenses')}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                type === 'expenses'
+                  ? 'bg-red-100 text-red-700'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Expenses
+            </button>
+            <button
+              onClick={() => setType('income')}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                type === 'income'
+                  ? 'bg-green-100 text-green-700'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Income
+            </button>
+          </div>
         </div>
         <DateDropdown onSelect={handleTimeframeChange} />
       </div>
@@ -256,7 +343,7 @@ function ExpenseDistribution({ title = "Expense Distribution" }) {
           isLoading ? "opacity-50" : "opacity-100"
         }`}
       >
-        <div className="flex flex-col gap-3 mr-8 min-w-[120px] max-h-[200px] overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-300 pr-2">
+        <div className="flex flex-col gap-3 mr-8 min-w-[120px] max-h-[180px] overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-300 pr-2">
           {data.map((entry, index) => (
             <div key={entry.name} className="flex items-center gap-2">
               {giveIconByCategory(entry.name)}
@@ -265,7 +352,7 @@ function ExpenseDistribution({ title = "Expense Distribution" }) {
                   className="text-sm font-medium"
                   style={{ color: CATEGORY_COLORS[entry.name] || CATEGORY_COLORS.default }}
                 >
-                  {entry.name}
+                  {entry.name.replace(/_/g, ' ')}
                 </span>
                 <span className="text-xs text-gray-500">
                   {entry.percentage.toFixed(1)}%
@@ -274,7 +361,6 @@ function ExpenseDistribution({ title = "Expense Distribution" }) {
             </div>
           ))}
         </div>
-        {/* Chart */}
         <div className="flex-1 h-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -303,4 +389,4 @@ function ExpenseDistribution({ title = "Expense Distribution" }) {
   );
 }
 
-export default ExpenseDistribution;
+export default DistributionChart;

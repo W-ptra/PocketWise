@@ -5,10 +5,12 @@ function BalanceCard({ balance }) {
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-1">
         <div className="flex justify-between gap-2">
-          <Banknote className="w-6 h-6 text-[#00AB6B]" />
-          <h2 className="text-gray-600 font-bold text-xl">Balance</h2>
+          <div className="bg-green-50 p-2 rounded-lg">
+            <Banknote className="w-6 h-6 text-[#00AB6B]" />
+          </div>
+          <h2 className="text-gray-600 font-bold text-xl mt-2">Balance</h2>
         </div>
       </div>
       <div className="flex flex-col">

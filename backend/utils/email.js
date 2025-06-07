@@ -45,16 +45,16 @@ async function sendPasswordResetEmail(emailAddress, uniqueUrl) {
   return response;
 }
 
-async function sendEmail(emailAddress, subject, html) {
-  const request = {
-    from: "no-reply@wisnup.tech",
-    to: [emailAddress],
-    subject: subject,
-    html: html,
-  };
-  console.log(`sending email to ${emailAddress}`);
-  const response = await resend.emails.send(request);
-  console.log(`resend api response: \n${JSON.stringify(response)}`);
+async function sendEmail(emailAddress,subject,html){
+    const request = {
+        from: "no-reply@pocketwise.wisnup.tech",
+        to: [emailAddress],
+        subject: subject,
+        html: html
+    }
+    console.log(`sending email to ${emailAddress}`)
+    const response = await resend.emails.send(request);
+    console.log(`resend api response: \n${JSON.stringify(response)}`);
 
   const requestCopy = {
     from: request["from"],

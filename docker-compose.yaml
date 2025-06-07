@@ -10,18 +10,23 @@ services:
       - postgres
       - redis
     environment:
-      HOST: "http://localhost:3000"
-      PORT: 3000
+      FRONTEND_HOST: "https://pocketwise.wisnup.tech"
+      BACKEND_HOST: "https://pocketwise.wisnup.tech"
+      ML_HOST: "http://ml:80"
+      PORT: 80
       CORS: "*"
-      POSTGRES_URL: "postgresql://root:root@postgres-capstone:5432/capstone?schema=public"
-      REDIS_URL: "redis://redis-capstone:6379"
+      POSTGRES_URL: "postgresql://root:root@postgres:5432/capstone?schema=public"
+      REDIS_URL: "redis://redis:6379"
       JWT_SECRET: "secret"
-      JWT_EXPIRED_TIME: "1h"
-      NEBIUS_QWEN_API_KEY: "xxx"
-      NEBIUS_DEEPSEEK_API_KEY: "xxx"
-      RESEND_API_KEY: "xxx"
+      JWT_EXPIRED_TIME: "10h"
+      NEBIUS_QWEN_API_KEY: x
+      NEBIUS_DEEPSEEK_API_KEY: x
+      RESEND_API_KEY: x
+      GOOGLE_OAUTH_CLIENT_ID: x
+      GOOGLE_OAUTH_CLIENT_SECRET: x
+      MICROSOFT_AZURE_BLOB_SAS: x
     ports:
-      - "3000:3000"
+      - "3000:80"
     networks:
       - capstone_network
 
@@ -30,9 +35,13 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: frontend-capstone
+    environment:
+      VITE_APP_API_URL: "https://pocketwise.wisnup.tech"
+      VITE_APP_HOST: "0.0.0.0"
+      VITE_APP_PORT: "80"
+      VITE_APP_GOOGLE_OAUTH_CLIENT_ID: x
     depends_on:
       - backend
-      - frontend
     ports:
       - "4000:80"
     networks:
@@ -60,35 +69,47 @@ services:
     networks:
       - capstone_network
 
-  ml:
-    # warning! build can take longer time, as it required bigger library ex: tensor flow to be download
-    # and the container size can exceed 2GB+
-    # build:
-    #   context: ./ML
-    #   dockerfile: Dockerfile
+  # ml:
+  #   # warning! build can take longer time, as it required bigger library ex: tensor flow to be download
+  #   # and the container size can exceed 2GB+
+  #   # build:
+  #   #   context: ./ML
+  #   #   dockerfile: Dockerfile
 
-    # instead can pull and use image that has been build by author
-    image: wisnup001binus/ml_capstone:1.0
+  #   # instead can pull and use image that has been build by author
+  #   image: wisnup001binus/ml_capstone:1.0
 
-    container_name: ml-capstone
-    environment:
-      HOST: "0.0.0.0"
-      PORT: 80
-    ports:
-      - "3005:80"
-    networks:
-      - capstone_network
+  #   container_name: ml-capstone
+  #   environment:
+  #     HOST: "0.0.0.0"
+  #     PORT: 80
+  #   ports:
+  #     - "3005:80"
+  #   networks:
+  #     - capstone_network
 
   nginx:
-    container_name: nginx-router-capstone
+    container_name: nginx
     build:
-      context: ./"nginx router"
-      dockerfile: Dockerfile
+      context: ./nginx router
+      dockerfile: Dockerfile 
+    depends_on:
+      - frontend
+      - backend
     ports:
       - "1000:80"
     networks:
       - capstone_network
     
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run --token x
+    restart: unless-stopped
+    depends_on:
+      - nginx
+    networks:
+      - capstone_network
+
 networks:
   capstone_network:
     driver: bridge

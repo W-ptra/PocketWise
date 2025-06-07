@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { isInputsInvalid } from "~utils/validation";
 import { deleteToken, getToken } from "~utils/localStorage";
 import { getRequest, putRequest } from "~utils/api";
-import Message from "@/pages/dashboard/_components/message";
+import Message from "@/pages/dashboard/_components/Message.jsx";
 import { UserCircle2, Mail, Edit2, LogOut, Star, Undo2 } from "lucide-react";
 import { FaGoogle } from "react-icons/fa";
 

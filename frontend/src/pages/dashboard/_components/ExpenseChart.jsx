@@ -12,6 +12,8 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import DateDropdown from "./DateDropdown";
 import LoadingSpinner from "../../../components/LoadingSpinner";
+import { getRequest } from "@/utils/api";
+import { getToken } from "@/utils/localStorage";
 
 const generateRandomChartData = (base) => {
   return base.map((item) => ({
@@ -39,10 +41,39 @@ const DUMMY_DATA = {
   all_time: generateRandomChartData(DUMMY_CHART_DATA_BASE),
 };
 
-const fetchExpenseChart = async (timeframe = "today") => {
-  console.log(`Fetching chart data for timeframe: ${timeframe}`);
-  await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate network delay
-  return DUMMY_DATA[timeframe];
+const fetchExpenseChart = async (timeframe = "today", visibility = "day") => {
+  let timeRange = "a";
+
+  if(timeframe === "today"){
+    timeRange = "day";
+  } else if(timeframe === "last_week"){
+    timeRange = "week";
+  } else if(timeframe === "last_month"){
+    timeRange= "month";
+  } else if(timeframe === "1_year"){
+    timeRange= "year";
+  }  else if(timeframe === "all_time"){
+    timeRange= "alltime";
+  }
+  
+  let type = "";
+  if(visibility.expense && visibility.income){
+    type = "all";
+  } else if(visibility.expense){
+    type = "expense";
+  } else if(visibility.income){
+    type= "income";
+  }
+  console.log(`api/transaction/graph?timeRange=${timeRange}&type=${type}`);
+  const result = await getRequest(`api/transaction/graph?timeRange=${timeRange}&type=${type}`,getToken());
+  const graphData = result.data;
+  console.log(graphData);
+  
+  if(result.error){
+    return DUMMY_DATA[timeframe];
+  }
+
+  return graphData;
 };
 
 const formatCurrency = (value) => {
@@ -101,8 +132,8 @@ function ExpenseChart() {
     isError,
     error,
   } = useQuery({
-    queryKey: ["expenseChart", timeframe],
-    queryFn: () => fetchExpenseChart(timeframe),
+    queryKey: ["expenseChart", timeframe, visibility],
+    queryFn: () => fetchExpenseChart(timeframe, visibility),
     staleTime: 5 * 60 * 1000,
     keepPreviousData: true,
   });

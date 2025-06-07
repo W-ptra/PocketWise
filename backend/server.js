@@ -43,7 +43,7 @@ const init = async () => {
     "Registered Routes:",
     server.table().map((route) => `${route.method.toUpperCase()} ${route.path}`)
   );
-  console.log("Server running on %s", server.info.uri);
+  console.log(`[Worker ${process.pid}] Server running on ${server.info.uri}`);
 };
 
 init();

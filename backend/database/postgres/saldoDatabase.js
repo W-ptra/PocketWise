@@ -19,7 +19,7 @@ async function getSaldoByUserId(userId){
             amount: true
         }
     });
-    console.log(data);
+
     return data;
 }
 

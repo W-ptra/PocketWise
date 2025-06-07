@@ -1,7 +1,6 @@
 const authRouters = require("./authRouters");
 const userRoutes = require("./userRouters");
 const transactionRoutes = require("./transactionRouters");
-const transactionTypeRoutes = require("./transactionTypeRouters");
 const saldoRoutes = require("./saldoRouters");
 const aiRoutes = require("./aiRouters");
 
@@ -26,13 +25,6 @@ exports.plugin = {
       plugin: transactionRoutes,
       routes: {
         prefix: "/api/transaction",
-      },
-    });
-
-    await server.register({
-      plugin: transactionTypeRoutes,
-      routes: {
-        prefix: "/api/transaction-type",
       },
     });
 

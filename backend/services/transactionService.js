@@ -160,6 +160,15 @@ async function createNewTransactions(request, h) {
   }
 }
 
+function isTransactionAmountInvalid(transactions){
+  for(const transaction in transactions){
+    const amount = typeof(transaction.amount) === "number" ? transaction.amount : parseInt(transaction.amount);
+    
+    if( (transaction.transactionTypeId === "1" && amount < 0) || (transaction.transactionTypeId !== "1" && amount > 0)) return true;
+  }
+  return false;
+}
+
 async function updateTransactions(request, h) {
   try {
     const user = request.user;

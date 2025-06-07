@@ -3,6 +3,8 @@ import Navbar from "@/pages/dashboard/_components/Navbar";
 import Footer from "@/pages/dashboard/_components/Footer";
 import { getRequest, postRequest } from "~utils/api";
 import { getToken } from "~utils/localStorage";
+import TransactionTable from "./_components/TransactionTable";
+import TransactionForm from "./_components/TransactionForm";
 
 const allowedTransactionType = [
   "1",
@@ -205,181 +207,14 @@ function TransactionHistory() {
   }, []);
 
   return (
-    <div>
+    <div className="min-h-screen flex flex-col bg-[#F2F2F2]">
       <Navbar />
-      <div className="mt-10 mb-10">
-        <div className="mx-auto max-w-3xl rounded bg-white p-6 shadow">
-          <div className="text-center">
-            <button className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-green-500 text-white">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-8 w-8"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 11c.828 0 1.5-.895 1.5-2s-.672-2-1.5-2-1.5.895-1.5 2 .672 2 1.5 2z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M19 20H5a2 2 0 01-2-2V8a2 2 0 012-2h2.586a1 1 0 00.707-.293l.707-.707A1 1 0 0110.414 5h3.172a1 1 0 01.707.293l.707.707a1 1 0 00.707.293H19a2 2 0 012 2v10a2 2 0 01-2 2z"
-                />
-              </svg>
-            </button>
-            <p className="font-semibold text-green-600">Scan Receipt</p>
-            <div className="my-2 text-gray-400">Or</div>
-            <p className="font-semibold text-[#00AB6B]">Manual Input</p>
-          </div>
-
-          {/* Input Rows Section */}
-          <div className="mt-4 space-y-2">
-            <div className="grid grid-cols-5 gap-2 text-sm font-semibold text-gray-600">
-              <label>Amount</label>
-              <label>Title</label>
-              <label>Transaction Type</label>
-              <label>Date Time</label>
-              <label>Delete</label>
-            </div>
-
-            <div id="input-rows">
-              {inputRows.map((row) => (
-                <div key={row.id} className="mt-1 grid grid-cols-5 gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    max="9999999999999999"
-                    className="rounded border px-2 py-1"
-                    placeholder="Rp."
-                    name="amount"
-                    value={row.amount}
-                    onChange={(e) => handleInputChange(row.id, e)}
-                  />
-                  <input
-                    type="text"
-                    className="rounded border px-2 py-1"
-                    placeholder=""
-                    name="title"
-                    value={row.title}
-                    onChange={(e) => handleInputChange(row.id, e)}
-                  />
-                  <select
-                    className="rounded border px-2 py-1"
-                    name="transactionTypeId"
-                    value={row.transactionTypeId}
-                    onChange={(e) => handleInputChange(row.id, e)}
-                  >
-                    <option value="1">Income</option>
-                    <option value="2">Rent</option>
-                    <option value="3">Loan_Repayment</option>
-                    <option value="4">Insurance</option>
-                    <option value="5">Groceries</option>
-                    <option value="6">Transport</option>
-                    <option value="7">Eating_Out</option>
-                    <option value="8">Entertainment</option>
-                    <option value="9">Utilities</option>
-                    <option value="10">Healthcare</option>
-                    <option value="11">Education</option>
-                  </select>
-
-                  <input
-                    type="date"
-                    className="rounded border px-2 py-1"
-                    placeholder=""
-                    name="createdAt"
-                    value={row.dateTime}
-                    onChange={(e) => handleInputChange(row.id, e)}
-                  />
-                  <button
-                    className="bg-red-500 flex flex-row justify-center items-center hover:bg-red-400 cursor-pointer rounded"
-                    onClick={() => handleDeleteRow(row.id)}
-                  >
-                    <img src="/logo/cross.png" alt="" className="size-5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex justify-center w-full mt-4">
-            <button
-              onClick={addInputRow}
-              className="mt-2 w-full rounded border border-green-600 px-4 py-1 text-green-600 hover:bg-green-50 cursor-pointer"
-            >
-              Add Another Item
-            </button>
-          </div>
-
-          <div className="mt-4">
-            <button
-              className="w-full rounded bg-green-600 py-2 font-semibold text-white  hover:bg-green-500 cursor-pointer"
-              onClick={insertTransaction}
-            >
-              Add Transaction
-            </button>
-          </div>
-
-          {isError && (
-            <p className="text-center text-red-500 mt-2">{errorMessage}</p>
-          )}
-
-          {isSuccessMessage && (
-            <p className="text-center text-black mt-4">{successMessage}</p>
-          )}
+      <div className="flex-1 grid grid-cols-3 gap-6 p-6">
+        <div className="col-span-2">
+          <TransactionTable />
         </div>
-
-        <div className="mx-auto max-w-3xl rounded bg-white p-6 shadow mt-5">
-          <div className="mt-6">
-            <div className="grid grid-cols-4 bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700">
-              <div>Amount</div>
-              <div>Title</div>
-              <div>Transaction Type</div>
-              <div>Date Time</div>
-            </div>
-
-            {/* Sample Entries (consider making this dynamic with state too) */}
-            <div className="divide-y">
-              {transactionHistory &&
-                transactionHistory.map((transactionData) => (
-                  <div className="grid grid-cols-4 px-4 py-2 text-[0.6rem] md:text-sm">
-                    <div>{transactionData.amount}</div>
-                    <div>{transactionData.title}</div>
-                    <div>{transactionData.transactionType.name}</div>
-                    <div>{transactionData.createdAt.slice(0, 10)}</div>
-                  </div>
-                ))}
-            </div>
-
-            <div className="mt-4 text-center flex justify-center items-center gap-x-2">
-              {generatePageNumbers(pageNumber, totalPage).map((page, index) =>
-                page === "..." ? (
-                  <span key={index} className="text-gray-400">
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={index}
-                    className={`min-w-[30px] h-[30px] rounded-md ${
-                      pageNumber === page
-                        ? "bg-green-600 text-white"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                    onClick={() =>
-                      pageNumber !== page && fetchTransactionHistory(page)
-                    }
-                    disabled={pageNumber === page}
-                  >
-                    {page}
-                  </button>
-                )
-              )}
-            </div>
-          </div>
+        <div className="col-span-1">
+          <TransactionForm />
         </div>
       </div>
       <Footer />

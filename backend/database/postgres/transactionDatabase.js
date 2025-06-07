@@ -1,19 +1,13 @@
 const { PrismaClient } = require("../../generated/prisma");
 const prisma = new PrismaClient();
-const dayjs = require("dayjs");
 
 async function createTransactions(transactions) {
-
-  try {
-    const created = [];
+  const created = [];
     for (const tx of transactions) {
       const result = await prisma.transaction.create({ data: tx });
       created.push(result);
     }
-    return created;
-  } catch (err) {
-    console.log(err);
-  }
+  return created;
 }
 
 async function getSingleTransactionByUserId(userId, transactionId) {
@@ -27,9 +21,8 @@ async function getSingleTransactionByUserId(userId, transactionId) {
 
 async function getTransactionByUserIdWithoutPagination(option = {}) {
   const queryOption = queryOptionBuilderWithoutPagination(option);
-  console.log(queryOption)
-  try {
-    const data = await prisma.transaction.findMany({
+  console.log(queryOption);
+  const data = await prisma.transaction.findMany({
       ...queryOption,
       select: {
         id: true,
@@ -38,12 +31,9 @@ async function getTransactionByUserIdWithoutPagination(option = {}) {
         createdAt: true,
         transactionType: true,
       },
-    });
-    return data;
-  } catch (err) {
-    console.log(err);
-    throw err;
-  }
+  });
+  console.log(data);
+  return data;
 }
 
 async function getTransactionsByUserId(option = {}) {
@@ -52,9 +42,7 @@ async function getTransactionsByUserId(option = {}) {
   pageSize = pageSize || 10;
 
   const queryOption = queryOptionBuilder(option);
-  console.log(queryOption);
-  try {
-    const [data, total] = await Promise.all([
+  const [data, total] = await Promise.all([
       prisma.transaction.findMany({
         ...queryOption,
         select: {
@@ -72,16 +60,13 @@ async function getTransactionsByUserId(option = {}) {
       }),
     ]);
     
-    return {
-      data,
-      total,
-      page,
-      pageSize,
-      totalPages: Math.ceil(total / pageSize),
-    };
-  } catch (err) {
-    console.log(err);
-  }
+  return {
+    data,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.ceil(total / pageSize),
+  };
 }
 
 async function getTransactionsByIds(ids) {
@@ -133,15 +118,15 @@ function queryOptionBuilder(option = {}) {
     timeRange,
     limit,
   } = option;
-  console.log(option)
+
   let amountFilter;
   let createdAtFilter;
   let orderBy;
 
-  if (type === "top-expense") {
+  if (type === "expense") {
     amountFilter = { lt: 0 };
     orderBy = { amount: "asc" };
-  } else if (type === "top-income") {
+  } else if (type === "income") {
     amountFilter = { gt: 0 };
     orderBy = { amount: "desc" };
   } else {
@@ -149,19 +134,24 @@ function queryOptionBuilder(option = {}) {
   }
 
   if (timeRange) {
+    const now = new Date();
+    let fromDate = new Date(now);
+
     if (timeRange === "day") {
-      createdAtFilter = {
-        gte: dayjs().subtract(1, "day").startOf("day").toDate(),
-      };
+      fromDate.setDate(fromDate.getDate() - 1);
+    } else if (timeRange === "week") {
+      fromDate.setDate(fromDate.getDate() - 7);
     } else if (timeRange === "month") {
-      createdAtFilter = {
-        gte: dayjs().subtract(1, "month").startOf("day").toDate(),
-      };
+      fromDate.setMonth(fromDate.getMonth() - 1);
     } else if (timeRange === "year") {
-      createdAtFilter = {
-        gte: dayjs().subtract(1, "year").startOf("day").toDate(),
-      };
+      fromDate.setFullYear(fromDate.getFullYear() - 1);
     }
+
+    fromDate.setHours(0, 0, 0, 0);
+
+    createdAtFilter = {
+      gte: fromDate
+    };
   }
 
   return {
@@ -185,36 +175,40 @@ function queryOptionBuilderWithoutPagination(option = {}) {
     timeRange,
   } = option;
 
-  console.log(type,timeRange)
 
   let amountFilter;
   let createdAtFilter;
   let orderBy;
 
-  if (type === "top-expense") {
+  if (type === "expense") {
     amountFilter = { lt: 0 };
     orderBy = { amount: "asc" };
-  } else if (type === "top-income") {
+  } else if (type === "income") {
     amountFilter = { gt: 0 };
     orderBy = { amount: "desc" };
   } else {
     orderBy = { createdAt: "desc" };
   }
 
-  if (timeRange) {
+  if (timeRange && timeRange !== "alltime") {
+    const now = new Date();
+    let fromDate = new Date(now);
+
     if (timeRange === "day") {
-      createdAtFilter = {
-        gte: dayjs().subtract(1, "day").startOf("day").toDate(),
-      };
+      fromDate.setDate(fromDate.getDate() - 1);
+    } else if (timeRange === "week") {
+      fromDate.setDate(fromDate.getDate() - 7);
     } else if (timeRange === "month") {
-      createdAtFilter = {
-        gte: dayjs().subtract(1, "month").startOf("day").toDate(),
-      };
+      fromDate.setMonth(fromDate.getMonth() - 1);
     } else if (timeRange === "year") {
-      createdAtFilter = {
-        gte: dayjs().subtract(1, "year").startOf("day").toDate(),
-      };
+      fromDate.setFullYear(fromDate.getFullYear() - 1);
     }
+    
+    fromDate.setHours(0, 0, 0, 0);
+
+    createdAtFilter = {
+      gte: fromDate
+    };
   }
 
   return {

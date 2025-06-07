@@ -2,376 +2,305 @@ const {
   getTransactionByUserIdWithoutPagination,
   createTransactions,
   getTransactionsByUserId,
-  getTransactionsByIds,
+  getSingleTransactionByUserId,
   updateTransaction,
   deleteTransactions,
 } = require("../database/postgres/transactionDatabase");
-const { getSaldoByUserId,updateSaldoByUserId } = require("../database/postgres/saldoDatabase");
-const { getTransactionTypesByIds } = require("../database/postgres/transactionTypeDatabase");
+const {
+  getSaldoByUserId,
+  updateSaldoByUserId,
+} = require("../database/postgres/saldoDatabase");
+const {
+  getTransactionTypesByIds,
+} = require("../database/postgres/transactionTypeDatabase");
 const customParseFormat = require("dayjs/plugin/customParseFormat");
 const { isInputInvalid } = require("../utils/validation");
 const dayjs = require("dayjs");
 dayjs.extend(customParseFormat);
 
-async function getAllTransaction(request, h) {
+// Enum values matching the Prisma schema
+const TransactionType = {
+  Income: 'Income',
+  Rent: 'Rent',
+  Loan_Repayment: 'Loan_Repayment',
+  Insurance: 'Insurance',
+  Groceries: 'Groceries',
+  Transport: 'Transport',
+  Eating_Out: 'Eating_Out',
+  Entertainment: 'Entertainment',
+  Utilities: 'Utilities',
+  Healthcare: 'Healthcare',
+  Education: 'Education'
+};
+
+async function getAllTransactions(request, h) {
   const user = request.user;
 
-  const queryOption = {
+  const queryOption = ({
     page = 1,
     pageSize = 10,
     type,
     timeRange,
     limit,
-    pagination
-  } = request.query;
+    pagination,
+  } = request.query);
 
   pagination = pagination === undefined || pagination === "true" ? true : false;
 
-  console.log(pagination);
+  queryOption.userId = user.id;
+  queryOption.page = Number(queryOption.page) || 1;
+  queryOption.pageSize = Number(queryOption.pageSize) || 10;
 
-  queryOption["userId"] = user.id;
-  queryOption.page = typeof(queryOption.page) === "number" ? queryOption.page : parseInt(queryOption.page);
-  queryOption.pageSize = typeof(queryOption.pageSize) === "number" ? queryOption.pageSize : parseInt(queryOption.pageSize);
+  try {
+    const transactions = pagination
+      ? await getTransactionsByUserId(queryOption)
+      : await getTransactionByUserIdWithoutPagination(queryOption);
 
-  const transactions = pagination ? await getTransactionsByUserId(queryOption) : await getTransactionByUserIdWithoutPagination(queryOption);
+    if (!transactions?.length) {
+      return h.response({
+        error: "Transaction record is empty",
+      }).code(404);
+    }
 
-  if(transactions.length === 0){
-    return h
-      .response({
-        error: "transaction record is empty",
-      })
-      .code(404);
-  }
-
-  return h
-    .response({
-      message: "successfully retrive transactions data",
+    return h.response({
+      message: "Successfully retrieve transactions data",
       data: transactions,
-    })
-    .code(200);
+    }).code(200);
+  } catch (error) {
+    console.error('Error in getAllTransactions:', error);
+    return h.response({
+      error: "Internal server error",
+    }).code(500);
+  }
 }
 
-async function getAllTransactionTypeComparision(request,h){
+async function getAllTransactionsTypeComparison(request, h) {
   const user = request.user;
-  const queryOption = {
-    pagination,
-    type,
-    timeRange,
-    limit
-  } = request.query;
-  queryOption["userId"] = user.id;
-  const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
-  const transactionTypeComparision = getTransactionTypeComparationFromTransaction(transactions);
+  const queryOption = ({ pagination, type, timeRange, limit } = request.query);
+  queryOption.userId = user.id;
 
-  if(transactionTypeComparision.total === 0){
-    return h
-      .response({
-        error: "transaction comparision record is empty",
-      })
-      .code(404);
+  try {
+    const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
+    const transactionTypeComparison = getTransactionTypeComparisonFromTransaction(transactions);
+
+    if (transactionTypeComparison.total === 0) {
+      return h.response({
+        error: "Transaction comparison record is empty",
+      }).code(404);
+    }
+
+    return h.response({
+      message: "Successfully retrieve transactions comparison",
+      data: transactionTypeComparison,
+    }).code(200);
+  } catch (error) {
+    console.error('Error in getAllTransactionsTypeComparison:', error);
+    return h.response({
+      error: "Internal server error",
+    }).code(500);
   }
-
-  return h
-    .response({
-      message: "successfully retrive transactions comparision",
-      data: transactionTypeComparision,
-    })
-    .code(200);
 }
 
 async function createNewTransactions(request, h) {
   try {
     const user = request.user;
-    const { transactions } = request.payload;
+    const { title, transactionType, amount, createdAt } = request.payload;
 
-    if (isInputInvalid(transactions))
-      return h
-        .response({
-          message: "invalid input",
-        })
-        .code(400);
-
-    if(isTransactionTypeIdValid(transactions)){
-      return h
-        .response({
-          message: "transactionTypeId must number and range between 1 to 11",
-        })
-        .code(400);
-    }
-  
-    let newTransactions = getNewTransactionsFromRequestPayload(
-      user.id,
-      processTransactions(transactions)
-    );
-    
-    const invalidTransactionTypeIds =
-      await getInvalidTransactionTypeIds(newTransactions);
-
-    if (invalidTransactionTypeIds.length > 0){
-      return h
-        .response({
-          error: `Invalid transaction type IDs: ${invalidTransactionTypeIds.join(", ")}`,
-        })
-        .code(403);
+    // Validate required fields
+    if (!title || !transactionType || amount === undefined || !createdAt) {
+      return h.response({
+        error: "Missing required fields",
+      }).code(400);
     }
 
-    newTransactions = await createTransactions(newTransactions);
-
-    const totalAmount = getTotalAmount(newTransactions);
-    await updateSaldo(user.id,totalAmount);
-    return h
-      .response({
-        message: "Successfully created new transactions",
-        data: newTransactions,
-      })
-      .code(200);
-  } catch (err) {
-    console.log(err);
-  }
-}
-
-function isTransactionTypeIdValid(transactions) {
-  return transactions.some(transaction => {
-    const rawId = transaction.transactionTypeId;
-    const transactionTypeId = typeof rawId === "number" ? rawId : parseInt(rawId);
-
-    if (isNaN(transactionTypeId)) return true;
-
-    return transactionTypeId < 1 || transactionTypeId > 11;
-  });
-}
-
-function processTransactions(transactions) {
-
-  return transactions.map(transaction => {
-    const { id,transactionTypeId, ...rest } = transaction;
-
-    let transactionTypeIdNumber = typeof(transactionTypeId) === "number" ? transactionTypeId : parseInt(transactionTypeId)
-
-    
-    if (transactionTypeIdNumber !== 1) {
-      return {
-        ...rest,
-        transactionTypeId: transactionTypeIdNumber,
-        amount: transaction.amount * -1,
-      };
+    // Validate transaction type
+    if (!Object.values(TransactionType).includes(transactionType)) {
+      return h.response({
+        error: "Invalid transaction type",
+        validTypes: Object.values(TransactionType),
+      }).code(400);
     }
-    
-    return {
-      transactionTypeId: transactionTypeIdNumber,
-      ...rest
+
+    // Validate amount
+    const numAmount = Number(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      return h.response({
+        error: "Amount must be a positive number",
+      }).code(400);
+    }
+
+    // Validate date format
+    const parsedDate = dayjs(createdAt);
+    if (!parsedDate.isValid()) {
+      return h.response({
+        error: "Invalid date format for createdAt",
+      }).code(400);
+    }
+
+    const transactionData = {
+      title,
+      type: transactionType,
+      amount: numAmount,
+      createdAt: parsedDate.toDate(),
+      userId: user.id
     };
-  });
+
+    const newTransaction = await createTransactions(transactionData);
+    await updateSaldo(user.id, numAmount);
+
+    return h.response({
+      message: "Successfully created new transaction",
+      data: newTransaction,
+    }).code(201);
+  } catch (error) {
+    console.error('Error in createNewTransactions:', error);
+    return h.response({
+      error: "Internal server error",
+    }).code(500);
+  }
 }
 
 async function updateTransactions(request, h) {
   try {
     const user = request.user;
-    const { transactions } = request.payload;
+    const { id, title, transactionType, amount, createdAt } = request.payload;
 
-    if (isInputInvalid(transactions))
-      return h
-        .response({
-          message: "invalid input",
-        })
-        .code(400);
-
-    let newTransactions = getNewTransactionsFromRequestPayload(
-      user.id,
-      transactions
-    );
-
-    const invalidTransactionIds =
-      await getInvalidTransactionTypeIds(newTransactions);
-
-    if (invalidTransactionIds.length > 0){
-      return h
-        .response({
-          error: `Invalid transaction type IDs: ${invalidTransactionIds}`,
-        })
-        .code(403);
+    if (!id) {
+      return h.response({
+        error: "Transaction ID is required",
+      }).code(400);
     }
-    const forbiddenTransactionIds = await getForbiddenTransactionIds(
-      user.id,
-      newTransactions
-    );
-    if (forbiddenTransactionIds.length > 0)
-      return h
-        .response({
-          error: `Transaction with IDs: ${forbiddenTransactionIds.join(", ")} doesn't belong to current User`,
-        })
-        .code(403);
 
-    const totalAmountOld = await getTotalAmountFromTransaction(newTransactions);
-    newTransactions = await updateTransaction(
-      user.id,
-      newTransactions
-    );
+    const existingTransaction = await getSingleTransactionByUserId(user.id, id);
+    if (!existingTransaction) {
+      return h.response({
+        error: "Transaction not found",
+      }).code(404);
+    }
 
-    const totalAmountNew = getTotalAmount(newTransactions);
+    const updateData = {};
+    
+    if (title) updateData.title = title;
+    if (transactionType) {
+      if (!Object.values(TransactionType).includes(transactionType)) {
+        return h.response({
+          error: "Invalid transaction type",
+          validTypes: Object.values(TransactionType),
+        }).code(400);
+      }
+      updateData.type = transactionType;
+    }
+    if (amount !== undefined) {
+      const numAmount = Number(amount);
+      if (isNaN(numAmount) || numAmount <= 0) {
+        return h.response({
+          error: "Amount must be a positive number",
+        }).code(400);
+      }
+      updateData.amount = numAmount;
+    }
+    if (createdAt) {
+      const parsedDate = dayjs(createdAt);
+      if (!parsedDate.isValid()) {
+        return h.response({
+          error: "Invalid date format for createdAt",
+        }).code(400);
+      }
+      updateData.createdAt = parsedDate.toDate();
+    }
 
-    const delta = totalAmountNew - totalAmountOld;
-    await updateSaldo(user.id,delta);
+    const updatedTransaction = await updateTransaction(user.id, { id, ...updateData });
 
-    return h
-      .response({
-        message: `Successfully updated transactions`,
-        data: newTransactions,
-      })
-      .code(200);
-  } catch (err) {
-    console.log(err);
+    if (updateData.amount) {
+      const delta = updateData.amount - existingTransaction.amount;
+      await updateSaldo(user.id, delta);
+    }
+
+    return h.response({
+      message: "Successfully updated transaction",
+      data: updatedTransaction,
+    }).code(200);
+  } catch (error) {
+    console.error('Error in updateTransactions:', error);
+    return h.response({
+      error: "Internal server error",
+    }).code(500);
   }
 }
 
 async function deleteTransaction(request, h) {
-  const user = request.user;
+  try {
+    const user = request.user;
+    const { id } = request.payload;
 
-  const { ids } = request.payload;
-
-  if (isInputInvalid(ids))
-    return h
-      .response({
-        message: "invalid input",
-      })
-      .code(400);
-
-  let mismatchedTransactionIds = [];
-  let transactionIds = [];
-  const transactions = await getTransactionsByIds(ids);
-
-  transactions.map((transaction) => {
-    if (transaction.userId !== user.id) {
-      mismatchedTransactionIds.push(transaction.id);
+    if (!id) {
+      return h.response({
+        error: "Transaction ID is required",
+      }).code(400);
     }
-    transactionIds.push(transaction.id);
-  });
 
-  if (mismatchedTransactionIds.length > 0)
-    return h
-      .response({
-        error: `Transactions with IDs ${mismatchedTransactionIds.join(", ")} do not belong to the current user.`,
-      })
-      .code(403);
-
-  const totalAmount = (getTotalAmount(transactions) * -1);
-
-  await deleteTransactions(transactionIds);
-
-  await updateSaldo(user.id,totalAmount);
-
-  return h
-    .response({
-      message: `Successfully delete transactions with id ${transactionIds.join(", ")}`,
-    })
-    .code(200);
-}
-
-function getNewTransactionsFromRequestPayload(userId, transactions) {
-  return transactions.map((transaction) => {
-    return {
-      id: transaction.id,
-      title: transaction.title,
-      amount: parseInt(transaction.amount),
-      createdAt: dayjs(transaction.createdAt, "YYYY-MM-DD").toDate(),
-      transactionTypeId: parseInt(transaction.transactionTypeId),
-      userId: userId,
-    };
-  });
-}
-
-async function getInvalidTransactionTypeIds(transactions) {
-  const distinctTransactionTypeIdsArray =
-    getDistinctTransactionTypeId(transactions);
-
-  const confirmedTransactionTypes = await getTransactionTypesByIds(
-    distinctTransactionTypeIdsArray
-  );
-  const confirmedTransactionTypeIds = confirmedTransactionTypes.map(
-    (confirmedTransactionTypes) => {
-      return confirmedTransactionTypes.id;
+    const transaction = await getSingleTransactionByUserId(user.id, id);
+    if (!transaction) {
+      return h.response({
+        error: "Transaction not found",
+      }).code(404);
     }
-  );
 
-  let invalidTransactionTypeIds = [];
-  distinctTransactionTypeIdsArray.forEach((distinctTransactionTypeId) => {
-    if (!confirmedTransactionTypeIds.includes(distinctTransactionTypeId)) {
-        invalidTransactionTypeIds.push(distinctTransactionTypeId)
-    }
-  });
+    await deleteTransactions(id);
+    await updateSaldo(user.id, -transaction.amount);
 
-  return invalidTransactionTypeIds
-}
-
-async function getForbiddenTransactionIds(userId, transactions) {
-  const transactionIds = transactions.map((transaction) => transaction.id);
-  const transactionFromDBs = await getTransactionsByIds(transactionIds);
-
-  let forbiddenTransactionIds = [];
-  transactionFromDBs.forEach((transactionFromDB) => {
-    if (transactionFromDB.userId !== userId) {
-        forbiddenTransactionIds.push(transactionFromDB.id)
-    }
-  });
-  return forbiddenTransactionIds;
-}
-
-function getDistinctTransactionTypeId(transactions) {
-  const distinctTransactionTypeIdsMap = new Map();
-  transactions.forEach((transaction) => {
-    const id = transaction.transactionTypeId;
-
-    if (!distinctTransactionTypeIdsMap.get(id)) {
-      distinctTransactionTypeIdsMap.set(id, id);
-    }
-  });
-  
-  return [...distinctTransactionTypeIdsMap.keys()];
-}
-
-async function getTotalAmountFromTransaction(newTransaction){
-  const transactionIds = newTransaction.map((transaction) => transaction.id);
-  const transactionFromDBs = await getTransactionsByIds(transactionIds);
-  return getTotalAmount(transactionFromDBs);
-}
-
-function getTotalAmount(transactions){
-  let total = 0;
-  [...transactions].forEach(transaction => total += parseInt(transaction.amount))
-  return total;
-}
-
-async function updateSaldo(userId,amounts){
-  try{
-  const saldo = await getSaldoByUserId(userId);
-  console.log(userId,saldo,amounts);
-  const saldoTotalAmount = parseInt(saldo.amount) + parseInt(amounts);
-  await updateSaldoByUserId(userId,saldoTotalAmount);
-  }catch(err){
-    console.log(err)
+    return h.response({
+      message: `Successfully deleted transaction with id ${id}`,
+    }).code(200);
+  } catch (error) {
+    console.error('Error in deleteTransaction:', error);
+    return h.response({
+      error: "Internal server error",
+    }).code(500);
   }
 }
 
-function getTransactionTypeComparationFromTransaction(transactions){
-  let total = 0;
-  let comparation = {}
-  transactions.forEach(transaction => {
-    if (!comparation[transaction.transactionType.name]) {
-      comparation[transaction.transactionType.name] = 0;
+async function updateSaldo(userId, amount) {
+  try {
+    const saldo = await getSaldoByUserId(userId);
+    const currentAmount = Number(saldo.amount);
+    const updateAmount = Number(amount);
+    
+    if (isNaN(currentAmount) || isNaN(updateAmount)) {
+      throw new Error('Invalid amount format');
     }
-    let amount = typeof(transaction.amount) === "number" ? transaction.amount : parseInt(transaction.amount);
-    amount = amount > 0 ? amount : (amount * -1);
+    
+    const newAmount = currentAmount + updateAmount;
+    await updateSaldoByUserId(userId, newAmount);
+  } catch (error) {
+    console.error('Error in updateSaldo:', error);
+    throw error;
+  }
+}
 
-    comparation[transaction.transactionType.name] += amount;
-    total += amount;
-  })
-  comparation["total"]=total;
-  return comparation;
+function getTransactionTypeComparisonFromTransaction(transactions) {
+  const comparison = {
+    total: 0
+  };
+
+  for (const transaction of transactions) {
+    const type = transaction.type; // Updated to use the new schema
+    const amount = Math.abs(Number(transaction.amount));
+
+    if (!comparison[type]) {
+      comparison[type] = 0;
+    }
+
+    comparison[type] += amount;
+    comparison.total += amount;
+  }
+
+  return comparison;
 }
 
 module.exports = {
-  getAllTransactionTypeComparision,
-  getAllTransaction,
+  getAllTransactionsTypeComparison,
+  getAllTransactions,
   createNewTransactions,
   updateTransactions,
   deleteTransaction,

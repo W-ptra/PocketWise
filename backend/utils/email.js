@@ -47,7 +47,7 @@ async function sendPasswordResetEmail(emailAddress,uniqueUrl){
 
 async function sendEmail(emailAddress,subject,html){
     const request = {
-        from: "no-reply@wisnup.tech",
+        from: "no-reply@pocketwise.wisnup.tech",
         to: [emailAddress],
         subject: subject,
         html: html

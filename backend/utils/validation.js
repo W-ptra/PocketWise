@@ -28,6 +28,11 @@ function isTransactionDateInvalid(transactions) {
 }
 
 module.exports = {
+<<<<<<< HEAD
     isInputInvalid,
     isTransactionDateInvalid
 }
+=======
+  isInputInvalid,
+};
+>>>>>>> 93950df4b810ddb3b6e861fe9975189ff1e4007b

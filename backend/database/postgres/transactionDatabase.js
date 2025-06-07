@@ -1,13 +1,10 @@
 const { PrismaClient } = require("../../generated/prisma");
 const prisma = new PrismaClient();
 
-async function createTransactions(transactions) {
-  const created = [];
-    for (const tx of transactions) {
-      const result = await prisma.transaction.create({ data: tx });
-      created.push(result);
-    }
-  return created;
+async function createTransactions(transaction) {
+  return await prisma.transaction.create({ 
+    data: transaction
+  });
 }
 
 async function getSingleTransactionByUserId(userId, transactionId) {
@@ -21,19 +18,16 @@ async function getSingleTransactionByUserId(userId, transactionId) {
 
 async function getTransactionByUserIdWithoutPagination(option = {}) {
   const queryOption = queryOptionBuilderWithoutPagination(option);
-  console.log(queryOption);
-  const data = await prisma.transaction.findMany({
-      ...queryOption,
-      select: {
-        id: true,
-        title: true,
-        amount: true,
-        createdAt: true,
-        transactionType: true,
-      },
+  return await prisma.transaction.findMany({
+    ...queryOption,
+    select: {
+      id: true,
+      title: true,
+      amount: true,
+      createdAt: true,
+      type: true,
+    },
   });
-  console.log(data);
-  return data;
 }
 
 async function getTransactionsByUserId(option = {}) {
@@ -43,22 +37,22 @@ async function getTransactionsByUserId(option = {}) {
 
   const queryOption = queryOptionBuilder(option);
   const [data, total] = await Promise.all([
-      prisma.transaction.findMany({
-        ...queryOption,
-        select: {
-          id: true,
-          title: true,
-          amount: true,
-          createdAt: true,
-          transactionType: true,
-        },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-      prisma.transaction.count({
-        where: { userId },
-      }),
-    ]);
+    prisma.transaction.findMany({
+      ...queryOption,
+      select: {
+        id: true,
+        title: true,
+        amount: true,
+        createdAt: true,
+        type: true,
+      },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.transaction.count({
+      where: { userId },
+    }),
+  ]);
     
   return {
     data,
@@ -80,31 +74,25 @@ async function getTransactionsByIds(ids) {
   });
 }
 
-async function updateTransaction(userId, transactionList) {
-  return await Promise.all(
-    transactionList.map(tx =>
-      prisma.transaction.update({
-        where: {
-          id: tx.id,
-          userId: userId
-        },
-        data: {
-          title: tx.title,
-          amount: tx.amount,
-          createdAt: tx.createdAt,
-          transactionTypeId: tx.transactionTypeId
-        }
-      })
-    )
-  );
+async function updateTransaction(userId, transaction) {
+  return await prisma.transaction.update({
+    where: {
+      id: transaction.id,
+      userId: userId
+    },
+    data: {
+      title: transaction.title,
+      amount: transaction.amount,
+      createdAt: transaction.createdAt,
+      type: transaction.type
+    }
+  });
 }
 
 async function deleteTransactions(transactionId) {
-  return await prisma.transaction.deleteMany({
+  return await prisma.transaction.delete({
     where: {
-      id: {
-        in: transactionId
-      },
+      id: transactionId
     },
   });
 }
@@ -161,10 +149,6 @@ function queryOptionBuilder(option = {}) {
       ...(createdAtFilter && { createdAt: createdAtFilter }),
     },
     orderBy,
-    ...(type ? { take: parseInt(limit) || 8 } : {
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    }),
   };
 }
 
@@ -174,7 +158,6 @@ function queryOptionBuilderWithoutPagination(option = {}) {
     type,
     timeRange,
   } = option;
-
 
   let amountFilter;
   let createdAtFilter;

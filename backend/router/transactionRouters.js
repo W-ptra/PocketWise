@@ -12,7 +12,7 @@ exports.plugin = {
             },
             {
                 method: "GET",
-                path: "/comparision",
+                path: "/comparison",
                 handler: transactionService.getAllTransactionsTypeComparison
             },
             {

@@ -27,10 +27,18 @@ model Saldo {
   user    User        @relation(fields: [userId],references: [id])
 }
 
-model TransactionType {
-  id            Int @id @default(autoincrement())
-  name          String
-  transactions  Transaction[]
+enum TransactionType {
+  Income
+  Rent
+  Loan_Repayment
+  Insurance
+  Groceries
+  Transport
+  Eating_Out
+  Entertainment
+  Utilities
+  Healthcare
+  Education
 }
 
 model Transaction {
@@ -39,9 +47,8 @@ model Transaction {
   amount            Decimal
   createdAt         DateTime
   userId            Int             
-  transactionTypeId Int             
+  type              TransactionType
   user              User            @relation(fields: [userId], references: [id])
-  transactionType   TransactionType @relation(fields: [transactionTypeId], references: [id])
 }
 
 model EmailLog {

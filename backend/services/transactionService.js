@@ -8,75 +8,89 @@ const {
 } = require("../database/postgres/transactionDatabase");
 const { getSaldoByUserId,updateSaldoByUserId } = require("../database/postgres/saldoDatabase");
 const { getTransactionTypesByIds } = require("../database/postgres/transactionTypeDatabase");
-const customParseFormat = require("dayjs/plugin/customParseFormat");
-const { isInputInvalid } = require("../utils/validation");
-const dayjs = require("dayjs");
-dayjs.extend(customParseFormat);
+const { isInputInvalid, isTransactionDateInvalid } = require("../utils/validation");
 
 async function getAllTransaction(request, h) {
-  const user = request.user;
+  try{
+    const user = request.user;
+  
+    const queryOption = {
+      page = 1,
+      pageSize = 10,
+      type,
+      timeRange,
+      limit,
+      pagination
+    } = request.query;
+  
+    pagination = pagination === undefined || pagination === "true" ? true : false;
 
-  const queryOption = {
-    page = 1,
-    pageSize = 10,
-    type,
-    timeRange,
-    limit,
-    pagination
-  } = request.query;
-
-  pagination = pagination === undefined || pagination === "true" ? true : false;
-
-  console.log(pagination);
-
-  queryOption["userId"] = user.id;
-  queryOption.page = typeof(queryOption.page) === "number" ? queryOption.page : parseInt(queryOption.page);
-  queryOption.pageSize = typeof(queryOption.pageSize) === "number" ? queryOption.pageSize : parseInt(queryOption.pageSize);
-
-  const transactions = pagination ? await getTransactionsByUserId(queryOption) : await getTransactionByUserIdWithoutPagination(queryOption);
-
-  if(transactions.length === 0){
+  
+    queryOption["userId"] = user.id;
+    queryOption.page = typeof(queryOption.page) === "number" ? queryOption.page : parseInt(queryOption.page);
+    queryOption.pageSize = typeof(queryOption.pageSize) === "number" ? queryOption.pageSize : parseInt(queryOption.pageSize);
+  
+    const transactions = pagination ? await getTransactionsByUserId(queryOption) : await getTransactionByUserIdWithoutPagination(queryOption);
+  
+    if(transactions.length === 0){
+      return h
+        .response({
+          error: "transaction record is empty",
+        })
+        .code(404);
+    }
+  
     return h
       .response({
-        error: "transaction record is empty",
+        message: "successfully retrive transactions data",
+        data: transactions,
       })
-      .code(404);
+      .code(200);
+  } catch(err){
+      console.error(err);
+      return h
+        .response({
+          error: "something went wrong, please contact pocketwise support",
+        })
+        .code(500);
   }
-
-  return h
-    .response({
-      message: "successfully retrive transactions data",
-      data: transactions,
-    })
-    .code(200);
 }
 
 async function getAllTransactionTypeComparision(request,h){
-  const user = request.user;
-  const queryOption = {
-    pagination,
-    type,
-    timeRange,
-    limit
-  } = request.query;
-  queryOption["userId"] = user.id;
-  const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
-  const transactionTypeComparision = getTransactionTypeComparationFromTransaction(transactions);
-
-  if(transactionTypeComparision.total === 0){
+  try{
+    const user = request.user;
+    const queryOption = {
+      pagination,
+      type,
+      timeRange,
+      limit
+    } = request.query;
+    queryOption["userId"] = user.id;
+    const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
+    const transactionTypeComparision = getTransactionTypeComparationFromTransaction(transactions);
+  
+    if(transactionTypeComparision.total === 0){
+      return h
+        .response({
+          error: "transaction comparision record is empty",
+        })
+        .code(404);
+    }
+  
     return h
       .response({
-        error: "transaction comparision record is empty",
+        message: "successfully retrive transactions comparision",
+        data: transactionTypeComparision,
       })
-      .code(404);
+      .code(200);
+  } catch(err){
+      console.error(err);
+      return h
+        .response({
+          error: "something went wrong, please contact pocketwise support",
+        })
+        .code(500);
   }
-
-  return h
-    .response({
-      message: "successfully retrive transactions comparision",
-      data: transactionTypeComparision,
-    })
-    .code(200);
 }
 
 async function createNewTransactions(request, h) {
@@ -99,12 +113,18 @@ async function createNewTransactions(request, h) {
         .code(400);
     }
   
+    if(isTransactionDateInvalid(transactions)){
+      return h
+        .response({
+          message: "createdAt is invalid, please use YYYY-MM-DD HH:MM:SS format",
+        })
+        .code(400);
+    }
+
     let newTransactions = getNewTransactionsFromRequestPayload(
       user.id,
       processTransactions(transactions)
     );
-    
-    console.log(newTransactions);
 
     const invalidTransactionTypeIds =
       await getInvalidTransactionTypeIds(newTransactions);
@@ -127,8 +147,13 @@ async function createNewTransactions(request, h) {
         data: newTransactions,
       })
       .code(200);
-  } catch (err) {
-    console.log(err);
+  } catch(err){
+      console.error(err);
+      return h
+        .response({
+          error: "something went wrong, please contact pocketwise support",
+        })
+        .code(500);
   }
 }
 
@@ -221,52 +246,66 @@ async function updateTransactions(request, h) {
         data: newTransactions,
       })
       .code(200);
-  } catch (err) {
-    console.log(err);
+  } catch(err){
+      console.error(err);
+      return h
+        .response({
+          error: "something went wrong, please contact pocketwise support",
+        })
+        .code(500);
   }
 }
 
 async function deleteTransaction(request, h) {
-  const user = request.user;
-
-  const { ids } = request.payload;
-
-  if (isInputInvalid(ids))
+  try{
+    const user = request.user;
+  
+    const { ids } = request.payload;
+  
+    if (isInputInvalid(ids))
+      return h
+        .response({
+          message: "invalid input",
+        })
+        .code(400);
+  
+    let mismatchedTransactionIds = [];
+    let transactionIds = [];
+    const transactions = await getTransactionsByIds(ids);
+  
+    transactions.map((transaction) => {
+      if (transaction.userId !== user.id) {
+        mismatchedTransactionIds.push(transaction.id);
+      }
+      transactionIds.push(transaction.id);
+    });
+  
+    if (mismatchedTransactionIds.length > 0)
+      return h
+        .response({
+          error: `Transactions with IDs ${mismatchedTransactionIds.join(", ")} do not belong to the current user.`,
+        })
+        .code(403);
+  
+    const totalAmount = (getTotalAmount(transactions) * -1);
+  
+    await deleteTransactions(transactionIds);
+  
+    await updateSaldo(user.id,totalAmount);
+  
     return h
       .response({
-        message: "invalid input",
+        message: `Successfully delete transactions with id ${transactionIds.join(", ")}`,
       })
-      .code(400);
-
-  let mismatchedTransactionIds = [];
-  let transactionIds = [];
-  const transactions = await getTransactionsByIds(ids);
-
-  transactions.map((transaction) => {
-    if (transaction.userId !== user.id) {
-      mismatchedTransactionIds.push(transaction.id);
-    }
-    transactionIds.push(transaction.id);
-  });
-
-  if (mismatchedTransactionIds.length > 0)
-    return h
-      .response({
-        error: `Transactions with IDs ${mismatchedTransactionIds.join(", ")} do not belong to the current user.`,
-      })
-      .code(403);
-
-  const totalAmount = (getTotalAmount(transactions) * -1);
-
-  await deleteTransactions(transactionIds);
-
-  await updateSaldo(user.id,totalAmount);
-
-  return h
-    .response({
-      message: `Successfully delete transactions with id ${transactionIds.join(", ")}`,
-    })
-    .code(200);
+      .code(200);
+  } catch(err){
+      console.error(err);
+      return h
+        .response({
+          error: "something went wrong, please contact pocketwise support",
+        })
+        .code(500);
+  }
 }
 
 function getNewTransactionsFromRequestPayload(userId, transactions) {
@@ -275,7 +314,7 @@ function getNewTransactionsFromRequestPayload(userId, transactions) {
       id: transaction.id,
       title: transaction.title,
       amount: parseInt(transaction.amount),
-      createdAt: dayjs(transaction.createdAt, "YYYY-MM-DD").toDate(),
+      createdAt: new Date(transaction.createdAt),
       transactionTypeId: parseInt(transaction.transactionTypeId),
       userId: userId,
     };
@@ -346,7 +385,6 @@ function getTotalAmount(transactions){
 async function updateSaldo(userId,amounts){
   try{
   const saldo = await getSaldoByUserId(userId);
-  console.log(userId,saldo,amounts);
   const saldoTotalAmount = parseInt(saldo.amount) + parseInt(amounts);
   await updateSaldoByUserId(userId,saldoTotalAmount);
   }catch(err){

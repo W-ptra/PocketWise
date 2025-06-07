@@ -9,6 +9,25 @@ function isInputInvalid(...args) {
   });
 }
 
+function isTransactionDateInvalid(transactions) {
+  const permittedDateFormatRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/; // YYYY-MM-DD HH-MM-SS
+
+  for (const transaction of transactions) {
+    const dateString = transaction.createdAt;
+    
+    if (!permittedDateFormatRegex.test(dateString)) {
+      return true;
+    }
+
+    const date = new Date(dateString.replace(" ", "T"));
+    if (isNaN(date.getTime())) {
+      return true;
+    }
+  }
+  return false;
+}
+
 module.exports = {
-    isInputInvalid
+    isInputInvalid,
+    isTransactionDateInvalid
 }

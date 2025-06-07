@@ -11,103 +11,121 @@ const ML_HOST = process.env.ML_HOST;
 const PERMITTED_TIME_RANGE = [ "week","month","year" ];
 
 async function getTransactionsUsingOcr(request, h) {
-    const data = request.payload;
-    const image = data.image;
-
-    if (!image || typeof image._read !== "function") {
-        return h.response({ error: "Image is required and must be a file." }).code(400);
+    try{
+        const data = request.payload;
+        const image = data.image;
+    
+        if (!image || typeof image._read !== "function") {
+            return h.response({ error: "Image is required and must be a file." }).code(400);
+        }
+    
+        const chunks = [];
+        for await (const chunk of image) {
+            chunks.push(chunk);
+        }
+        const buffer = Buffer.concat(chunks);
+        const base64Image = buffer.toString("base64");
+    
+        const mimeType = image.hapi.headers["content-type"];
+        const base64String = `data:${mimeType};base64,${base64Image}`;
+        const transactions = await ocr(base64String);
+    
+        return h
+            .response({
+            message: "successfully retrive transactions",
+            data: transactions,
+            })
+            .code(200);
+    } catch(err){
+        console.error(err);
+        return h
+            .response({
+                error: "something went wrong, please contact pocketwise support",
+            })
+            .code(500);
     }
-
-    const chunks = [];
-    for await (const chunk of image) {
-        chunks.push(chunk);
-    }
-    const buffer = Buffer.concat(chunks);
-    const base64Image = buffer.toString("base64");
-
-    const mimeType = image.hapi.headers["content-type"];
-    const base64String = `data:${mimeType};base64,${base64Image}`;
-    const transactions = await ocr(base64String);
-
-    return h
-        .response({
-        message: "successfully retrive transactions",
-        data: transactions,
-        })
-        .code(200);
 }
 
 async function getDailyJournal(request,h) {
-    const journalType = "daily";
-    const user = request.user;
-    const { timeRange } = request.query;
-
-    if (isInputInvalid(timeRange)){
+    try{
+        const journalType = "daily";
+        const user = request.user;
+        const { timeRange } = request.query;
+    
+        if (isInputInvalid(timeRange)){
+            return h
+                .response({
+                error: "invalid input",
+                })
+                .code(400);
+        }
+    
+        if(!PERMITTED_TIME_RANGE.includes(timeRange)){
+            return h
+                .response({
+                error: "timeRange invalid",
+                })
+                .code(400);
+        }
+    
+        const queryOption = {
+            userId: user.id,
+            type: "expense"
+        }
+    
+        const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
+        const journal_entry = formatMlDayRequest(transactions);
+    
+        const mlJournalCache = await getMlJournal(`${journalType}:${timeRange}`,journal_entry)
+    
+        if(mlJournalCache){
+            return h
+                .response({
+                    message: `successfully retrive daily journal with time range ${timeRange}`,
+                    data: mlJournalCache
+                })
+                .code(200);
+        }
+    
+        if(journal_entry.length < 7){
+            return h
+                .response({
+                    message: "expense record must at least 7 or more",
+                })
+                .code(404);
+        }
+    
+            const option = {
+            method: "POST",
+            headers: {
+                "Content-Type":"application/json"
+            },
+            body: JSON.stringify({journal_entry})
+        }
+        
+        const result = await fetch(`${ML_HOST}/journal/day?time=${timeRange}`,option);
+        const data = await result.json();
+    
+        let dailyJournalGraph = formatDailyJournalToArrayWithDate(data.prediction);
+    
+        dailyJournalGraph = formatDailyJournalGraph(dailyJournalGraph,timeRange);
+    
+        setMlJournal(`${journalType}:${timeRange}`,journal_entry,dailyJournalGraph);
+    
         return h
             .response({
-            message: "invalid input",
-            })
-            .code(400);
-    }
-
-    if(!PERMITTED_TIME_RANGE.includes(timeRange)){
-        return h
-            .response({
-            message: "invalid input",
-            })
-            .code(400);
-    }
-
-    const queryOption = {
-        userId: user.id,
-        type: "expense"
-    }
-
-    const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
-    const journal_entry = formatMlDayRequest(transactions);
-
-    const mlJournalCache = await getMlJournal(`${journalType}:${timeRange}`,journal_entry)
-
-    if(mlJournalCache){
-        return h
-            .response({
-                message: "successfully retrive month journal",
-                data: mlJournalCache
+                message: `successfully retrive daily journal with time range ${timeRange}`,
+                data: dailyJournalGraph
             })
             .code(200);
-    }
-
-    if(journal_entry.length < 7){
+    } catch(err){
+        console.error(err)
         return h
             .response({
-                message: "expense record must at least 7 or more",
+                error: "something went wrong, please contact pocketwise support",
             })
-            .code(404);
+            .code(500);
     }
-
-        const option = {
-        method: "POST",
-        headers: {
-            "Content-Type":"application/json"
-        },
-        body: JSON.stringify({journal_entry})
-    }
-    
-    const result = await fetch(`${ML_HOST}/journal/day?time=${timeRange}`,option);
-    const data = await result.json();
-
-    let dailyJournalGraph = formatDailyJournalToArrayWithDate(data.prediction);
-
-    dailyJournalGraph = formatDailyJournalGraph(dailyJournalGraph,timeRange);
-
-    setMlJournal(`${journalType}:${timeRange}`,journal_entry,dailyJournalGraph);
-
-    return h
-        .response({
-            message: "successfully retrive month journal",
-            data: dailyJournalGraph
-        })
-        .code(200);
 }
 
 function formatDailyJournalToArrayWithDate(predictions){
@@ -202,67 +220,76 @@ function formatMlDayRequest(transactions) {
 }
 
 async function getMonthJournay(request,h) {
-    const journalType = "monthly";
-    const user = request.user;
-
-    const pagination = {
-        page: 1,
-        pageSize: 100,
-    }
-
-    const timeRange = "month";
-
-    const limit = 100;
-
-    const queryOption = {
-        pagination,
-        timeRange,
-        limit,
-        userId: user.id
-    }
-
-    const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
-
-    if(transactions.length === 0){
-        return h
-            .response({
-                message: "transaction record is empty",
-            })
-            .code(404);
-    }
-
-    const mlJournalCache = await getMlJournal(`ml:${journalType}:${transactions}`,transactions)
-
-    if (mlJournalCache){
+    try{
+        const journalType = "monthly";
+        const user = request.user;
+    
+        const pagination = {
+            page: 1,
+            pageSize: 100,
+        }
+    
+        const timeRange = "month";
+    
+        const limit = 100;
+    
+        const queryOption = {
+            pagination,
+            timeRange,
+            limit,
+            userId: user.id
+        }
+    
+        const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
+    
+        if(transactions.length === 0){
+            return h
+                .response({
+                    message: "transaction record is empty",
+                })
+                .code(404);
+        }
+    
+        const mlJournalCache = await getMlJournal(`ml:${journalType}:${transactions}`,transactions)
+    
+        if (mlJournalCache){
+            return h
+                .response({
+                message: "successfully retrive month journal",
+                data: mlJournalCache,
+                })
+                .code(200);
+        }
+    
+        const journal_entry = formatMlMonthlyRequest(transactions);
+    
+        const option = {
+            method: "POST",
+            headers: {
+                "Content-Type":"application/json"
+            },
+            body: JSON.stringify({journal_entry})
+        }
+        
+        const result = await fetch(`${ML_HOST}/journal/month`,option);
+        const data = await result.json();
+    
+        setMlJournal(`ml:${journalType}:${transactions}`,transactions,data);
+    
         return h
             .response({
             message: "successfully retrive month journal",
-            data: mlJournalCache,
+            data: data,
             })
             .code(200);
+    } catch(err){
+        console.error(err);
+        return h
+            .response({
+                error: "something went wrong, please contact pocketwise support",
+            })
+            .code(500);
     }
-
-    const journal_entry = formatMlMonthlyRequest(transactions);
-
-    const option = {
-        method: "POST",
-        headers: {
-            "Content-Type":"application/json"
-        },
-        body: JSON.stringify({journal_entry})
-    }
-    
-    const result = await fetch(`${ML_HOST}/journal/month`,option);
-    const data = await result.json();
-
-    setMlJournal(journalType,transactions,data);
-
-    return h
-        .response({
-        message: "successfully retrive month journal",
-        data: data,
-        })
-        .code(200);
 }
 
 function formatMlMonthlyRequest(transactions){

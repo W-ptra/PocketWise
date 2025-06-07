@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 function Analysis(){
     const [monthlyJournal,setMonthlyJournal] = useState(null);
-
+    const [dailyJournal,setDailyJournal] = useState([]);
 
     const fetchMonthlyJournal =  async () => {
         const result = await getRequest("api/ai/journal/month",getToken());
@@ -14,8 +14,15 @@ function Analysis(){
         setMonthlyJournal(result.data);
     }
 
+    const fetchDailyJournal =  async () => {
+        const result = await getRequest("api/ai/journal/day?timeRange=month",getToken());
+        console.log(result);
+        setDailyJournal(result.data);
+    }
+
     useEffect(()=>{
         fetchMonthlyJournal();
+        fetchDailyJournal();
     },[]);
     
     return (
@@ -36,11 +43,13 @@ function Analysis(){
                             <div className="flex-1 border-[0.05rem] border-t border-gray-300"></div>
                             <div className="justify-right flex flex-col">
                                 <ul className="flex flex-col gap-y-1 mt-3">
-                                    { monthlyJournal && (
+                                    { monthlyJournal ? (
                                         monthlyJournal.feedback.map( element => (
                                             <li>{element}</li>
                                         ) )
-                                    ) }
+                                    ) : (
+                                        <div>Transaction data is empty</div>
+                                    )}
 
                                 </ul>
                             </div>
@@ -49,7 +58,22 @@ function Analysis(){
                     </div>
 
                     <div className="flex flex-col justify-center gap-y-3 rounded bg-white px-5 py-5 shadow-md w-full">
-                        <h2 className="text-[1.5rem] font-bold text-[#00AB6B] text-center">Analisa Harian</h2>
+                        <h2 className="text-[1.5rem] font-bold text-[#00AB6B] text-center">Prediksi pengeluaran</h2>
+                    </div>
+
+                    <div className="flex flex-col justify-center gap-y-5 rounded bg-white px-5 py-5 shadow-md w-full">
+                        <div className="flex flex-col">
+                           
+                            <div className="justify-right flex flex-col">
+                                <ul className="flex flex-col gap-y-1 mt-3">
+                                    {dailyJournal && dailyJournal.map( element => (
+                                        <div className="font-bold">{element.date} - {element.expense}</div>
+                                    ) ) }
+
+                                </ul>
+                            </div>
+                        </div>
+
                     </div>
 
                     <div className="flex flex-col justify-center gap-y-3 rounded bg-white px-5 py-5 shadow-md w-full mb-5 gap-x-1">

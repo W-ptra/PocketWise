@@ -1,97 +1,84 @@
-const {
-  getTransactionByUserIdWithoutPagination,
-  createTransactions,
-  getTransactionsByUserId,
-  getTransactionsByIds,
-  updateTransaction,
-  deleteTransactions,
-} = require("../database/postgres/transactionDatabase");
-const { getSaldoByUserId,updateSaldoByUserId } = require("../database/postgres/saldoDatabase");
-const { getTransactionTypesByIds } = require("../database/postgres/transactionTypeDatabase");
-const customParseFormat = require("dayjs/plugin/customParseFormat");
+const { getTransactionByUserIdWithoutPagination } = require("../database/postgres/transactionDatabase");
 const { isInputInvalid } = require("../utils/validation");
-const dayjs = require("dayjs");
-dayjs.extend(customParseFormat);
 
 const ALLOWED_TIME_RANGE = ["day","week","month","year"];
 const ALLOWED_TRANSACTION_TYPE = ["income","expense","all"];
 
 async function getAllTransactionForGraph(request,h){
-    const user = request.user;
-    let { timeRange,type } = request.query;
-
-    if(isInputInvalid(timeRange,type))
-        return h
-            .response({
-            error: "invalid input",
-            })
-            .code(400);
-
-    if(!ALLOWED_TRANSACTION_TYPE.includes(type)){
-        return h
-            .response({
-            error: "invalid input",
-            })
-            .code(400);
-    }
-
-    if(!ALLOWED_TIME_RANGE.includes(timeRange)){
-        return h
-            .response({
-            error: "invalid input",
-            })
-            .code(400);
-    }
-
-    let queryOption = {
-        userId: user.id,
-        timeRange,
-        type
-    }
-
-    if(type === "all"){
-        queryOption = {
-            userId: user.id,
-            timeRange,
-            type: "expense"
-        }
-    }
+    try{
+        const user = request.user;
+        let { timeRange,type } = request.query;
     
-    const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
+        if(isInputInvalid(timeRange,type))
+            return h
+                .response({
+                error: "invalid input",
+                })
+                .code(400);
+    
+        const isTransactionTypeAndTimeRangeInvalid = !ALLOWED_TRANSACTION_TYPE.includes(type) || !ALLOWED_TIME_RANGE.includes(timeRange);
 
-    if(transactions.length === 0){
-        return h
-            .response({
-            error: "transaction record is empty",
-            })
-            .code(404);
-    }
-
-    let transactionGraph = formatTransactionsToGraphData(transactions,timeRange);
-
-    if( type === "expense" || type === "income"){
-        transactionGraph = formatTransactionType(transactionGraph,type)
-    } else if(type === "all"){
-
-        const transactionGraphExpense = transactionGraph;
-
-        const queryOptionIncome = {
+        if(isTransactionTypeAndTimeRangeInvalid){
+            return h
+                .response({
+                error: "transactionType or timeRange is invalid",
+                })
+                .code(400);
+        }
+    
+        let queryOption = {
             userId: user.id,
             timeRange,
-            type: "income"
+            type
         }
-        const transactionsIncome = await getTransactionByUserIdWithoutPagination(queryOptionIncome);
-        const transactionGraphIncome = formatTransactionsToGraphData(transactionsIncome,timeRange);
-
-        transactionGraph = formatTransactionTypeBoth(transactionGraphIncome,transactionGraphExpense);
-    } 
-
-    return h
-        .response({
-            message: "successfull retrive transaction graph data",
-            data: transactionGraph
-        })
-        .code(200);      
+    
+        if(type === "all"){
+            queryOption.type = "expense";
+        }
+        
+        const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
+    
+        if(transactions.length === 0){
+            return h
+                .response({
+                error: "transaction record is empty",
+                })
+                .code(404);
+        }
+    
+        let transactionGraph = formatTransactionsToGraphData(transactions,timeRange);
+    
+        if( type === "expense" || type === "income"){
+            transactionGraph = formatTransactionType(transactionGraph,type)
+        } else if(type === "all"){
+    
+            const transactionGraphExpense = transactionGraph;
+    
+            const queryOptionIncome = {
+                userId: user.id,
+                timeRange,
+                type: "income"
+            }
+            const transactionsIncome = await getTransactionByUserIdWithoutPagination(queryOptionIncome);
+            const transactionGraphIncome = formatTransactionsToGraphData(transactionsIncome,timeRange);
+    
+            transactionGraph = formatTransactionTypeBoth(transactionGraphIncome,transactionGraphExpense);
+        } 
+    
+        return h
+            .response({
+                message: "successfull retrive transaction graph data",
+                data: transactionGraph
+            })
+            .code(200);      
+    } catch(err){
+        console.error(err);
+        return h
+            .response({
+                error: "something went wrong, please contact pocketwise support",
+            })
+            .code(500);
+    }
 }
 
 function formatTransactionsToGraphData(transactions,timeRange){

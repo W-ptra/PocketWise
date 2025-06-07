@@ -21,20 +21,15 @@ async function upsertUser(user) {
         profileImageUrl: user.profileImageUrl,
         authMethod: user.authMethod 
     };
-    try{
-        const upsertedUser = await prisma.user.upsert({
-            where: {
-                googleId: user.googleId
-            },
-            update: data,
-            create: data,
-        });
+    const upsertedUser = await prisma.user.upsert({
+        where: {
+            googleId: user.googleId
+        },
+        update: data,
+        create: data,
+    });
     
-        return upsertedUser;
-    }
-    catch(err){
-        console.log(err)
-    }
+    return upsertedUser;
 }
 
 async function getUserByEmail(email){
@@ -102,7 +97,7 @@ async function updateUserProfileImage(id,url){
 }
 
 async function updatePassword(id,password){
-     const where = { id };
+    const where = { id };
     const data = { 
         password
     }

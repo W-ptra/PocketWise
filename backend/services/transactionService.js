@@ -143,7 +143,11 @@ async function createNewTransactions(request, h) {
     };
 
     const newTransaction = await createTransactions(transactionData);
-    await updateSaldo(user.id, numAmount);
+    if(transactionType === "Income"){
+      await updateSaldo(user.id, numAmount);
+    } else {
+      await updateSaldo(user.id, -numAmount);
+    }
 
     return h.response({
       message: "Successfully created new transaction",

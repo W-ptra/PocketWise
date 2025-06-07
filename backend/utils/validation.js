@@ -14,7 +14,7 @@ function isTransactionDateInvalid(transactions) {
 
   for (const transaction of transactions) {
     const dateString = transaction.createdAt;
-    
+
     if (!permittedDateFormatRegex.test(dateString)) {
       return true;
     }
@@ -28,11 +28,6 @@ function isTransactionDateInvalid(transactions) {
 }
 
 module.exports = {
-<<<<<<< HEAD
-    isInputInvalid,
-    isTransactionDateInvalid
-}
-=======
   isInputInvalid,
+  isTransactionDateInvalid,
 };
->>>>>>> 93950df4b810ddb3b6e861fe9975189ff1e4007b

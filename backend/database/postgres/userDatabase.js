@@ -25,20 +25,6 @@ async function upsertUser(user) {
     const upsertedUser = await prisma.user.upsert({
       where: {
         googleId: user.googleId,
-<<<<<<< HEAD
-        profileImageUrl: user.profileImageUrl,
-        authMethod: user.authMethod 
-    };
-    const upsertedUser = await prisma.user.upsert({
-        where: {
-            googleId: user.googleId
-        },
-        update: data,
-        create: data,
-    });
-    
-    return upsertedUser;
-=======
       },
       update: data,
       create: data,
@@ -48,7 +34,6 @@ async function upsertUser(user) {
   } catch (err) {
     console.log(err);
   }
->>>>>>> 93950df4b810ddb3b6e861fe9975189ff1e4007b
 }
 
 async function getUserByEmail(email) {
@@ -115,18 +100,6 @@ async function updateUserProfileImage(id, url) {
   return user;
 }
 
-<<<<<<< HEAD
-async function updatePassword(id,password){
-    const where = { id };
-    const data = { 
-        password
-    }
-    const user = await prisma.user.update({
-        where,
-        data
-    })
-    return user;
-=======
 async function updatePassword(id, password) {
   const where = { id };
   const data = {
@@ -137,7 +110,6 @@ async function updatePassword(id, password) {
     data,
   });
   return user;
->>>>>>> 93950df4b810ddb3b6e861fe9975189ff1e4007b
 }
 
 module.exports = {

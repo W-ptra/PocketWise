@@ -10,5 +10,5 @@ function isInputInvalid(...args) {
 }
 
 module.exports = {
-    isInputInvalid
-}
+  isInputInvalid,
+};

@@ -1,32 +1,36 @@
-const { validateAndDecodeToken } = require("../utils/jwt")
+const { validateAndDecodeToken } = require("../utils/jwt");
 
-const publicPaths = [
-    "/api/auth",
-]
+const publicPaths = ["/api/auth"];
 
-function authentication(request,h){
-    if (request.method === 'options') {
-        return h.continue;
-    }
-    const path = request.path;
-
-    if(publicPaths.some(public => path.startsWith(public))){
-        return h.continue;
-    }
-
-    let token = request.headers['authorization'];
-    if (!token || !token.startsWith('Bearer ')) 
-        return h.response({ error: "Missing authorization token" }).code(401).takeover();
-    
-    token = token.replace("Bearer ","");
-    const user = validateAndDecodeToken(token);
-    if(!user)
-        return h.response({ error: "Authorization token is invalid or expired" }).code(401).takeover();
-    request.user = user;
-
+function authentication(request, h) {
+  if (request.method === "options") {
     return h.continue;
+  }
+  const path = request.path;
+
+  if (publicPaths.some((public) => path.startsWith(public))) {
+    return h.continue;
+  }
+
+  let token = request.headers["authorization"];
+  if (!token || !token.startsWith("Bearer "))
+    return h
+      .response({ error: "Missing authorization token" })
+      .code(401)
+      .takeover();
+
+  token = token.replace("Bearer ", "");
+  const user = validateAndDecodeToken(token);
+  if (!user)
+    return h
+      .response({ error: "Authorization token is invalid or expired" })
+      .code(401)
+      .takeover();
+  request.user = user;
+
+  return h.continue;
 }
 
 module.exports = {
-    authentication
-}
+  authentication,
+};

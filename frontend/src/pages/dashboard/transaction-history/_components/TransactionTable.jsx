@@ -116,44 +116,51 @@ const columns = [
 
 function TransactionTable() {
   const [sorting, setSorting] = useState([]);
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 8,
+  });
 
   const { data: transactionData, isLoading } = useQuery({
-    queryKey: ["transactions"],
+    queryKey: ["transactions", pagination.pageIndex, pagination.pageSize],
     queryFn: async () => {
       const token = getToken();
       if (!token) {
-        return [];
+        return { data: [], pageCount: 0 };
       }
-      const result = await getRequest("api/transaction", token);
+      const result = await getRequest(
+        `api/transaction?pagination=true&page=${pagination.pageIndex + 1}&pageSize=${pagination.pageSize}`, 
+        token
+      );
       if (result.error) throw new Error(result.error);
       
-      // Get the transactions array from the response
       const transactions = result.data?.data || [];
       
-      // Transform the data to match column structure
-      return transactions.map(transaction => ({
-        Amount: formatCurrency(transaction.amount),
-        Title: transaction.title,
-        "Transaction Type": transaction.type,
-        Date: new Date(transaction.createdAt).toLocaleDateString()
-      }));
+      return {
+        data: transactions.map(transaction => ({
+          Amount: formatCurrency(transaction.amount),
+          Title: transaction.title,
+          "Transaction Type": transaction.type,
+          Date: new Date(transaction.createdAt).toLocaleDateString()
+        })),
+        pageCount: result.data.totalPages
+      };
     },
   });
 
   const table = useReactTable({
-    data: transactionData || [],
+    data: transactionData?.data || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
+    onPaginationChange: setPagination,
+    manualPagination: true,
+    pageCount: transactionData?.pageCount ?? 0,
     state: {
       sorting,
-    },
-    initialState: {
-      pagination: {
-        pageSize: 8,
-      },
+      pagination,
     },
   });
 
@@ -218,15 +225,15 @@ function TransactionTable() {
 
       {table.getRowModel().rows.length > 0 && (
         <div className="flex items-center justify-between border-t border-gray-200 bg-white px-6 py-4">
-          <div className="text-sm text-gray-600">
-            Page{" "}
-            <span className="font-semibold text-gray-900">
+          <div className="flex items-center gap-1 text-sm text-gray-600">
+            <span>Page</span>
+            <strong className="font-semibold text-gray-900">
               {table.getState().pagination.pageIndex + 1}
-            </span>{" "}
-            of{" "}
-            <span className="font-semibold text-gray-900">
-              {table.getPageCount()}
-            </span>
+            </strong>
+            <span>of</span>
+            <strong className="font-semibold text-gray-900">
+              {transactionData?.pageCount || 0}
+            </strong>
           </div>
           <div className="flex items-center gap-3">
             <button

@@ -5,6 +5,7 @@ import { postRequest } from "~utils/api";
 import { getToken } from "~utils/localStorage";
 import { useMutation } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const TransactionType = [
   "Income",
@@ -69,6 +70,7 @@ const TransactionForm = () => {
       return result;
     },
     onSuccess: () => {
+      toast.success("Transaction created successfully");
       setFormData({
         amount: "",
         title: "",
@@ -79,6 +81,7 @@ const TransactionForm = () => {
       queryClient.invalidateQueries(["transactions"]);
     },
     onError: (error) => {
+      toast.error("Transaction creation failed");
       console.error("Transaction creation failed:", error);
     }
   });

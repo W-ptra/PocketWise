@@ -20,8 +20,13 @@ exports.plugin = {
             },
             {
                 method: "GET",
-                path: "/journal",
+                path: "/journal/month",
                 handler: aiService.getMonthJournay
+            },
+            {
+                method: "GET",
+                path: "/journal/day",
+                handler: aiService.getDailyJournal
             }
         ]);
     }

@@ -48,9 +48,9 @@ def predict_expense_controller(days, journal_entry, model, scaler_expense, scale
         X_data = daily_expense[features].values.tolist()
         predictions_scaled = []
 
-        for _ in range(days):  # predict for 7 future days
+        for _ in range(days):
             X_input = np.array(X_data[-window_size:]).reshape(1, window_size, -1)
-            pred_scaled = model.predict(X_input)[0][0]
+            pred_scaled = max(0, model.predict(X_input)[0][0])
             predictions_scaled.append(pred_scaled)
 
             last_row = X_data[-1]
@@ -75,12 +75,9 @@ def predict_expense_controller(days, journal_entry, model, scaler_expense, scale
             X_data.append(new_row)
 
         predictions_real = scaler_expense.inverse_transform(np.array(predictions_scaled).reshape(-1, 1)).flatten().tolist()
-        formatted_preds = [f"Hari ke-{i+1}: Rp {val:,.0f}" for i, val in enumerate(predictions_real)]
 
         return jsonify({
-            'predicted_expense_next_7_days': formatted_preds,
-            'raw_values': [round(val, 2) for val in predictions_real],
-            'message': 'Berikut prediksi total pengeluaran selama 7 hari ke depan. Gunakan ini untuk merencanakan anggaran harian Anda.'
+            'prediction': [round(val, 2) for val in predictions_real],
         }), 200
 
     except Exception as e:

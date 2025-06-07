@@ -12,7 +12,6 @@ function HandleGoogleOauthCallback(){
 
     saveToken(token);
 
-    console.log(token);
     window.location.href = "/dashboard";
   }, []);
 

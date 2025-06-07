@@ -4,8 +4,8 @@ require("dotenv").config();
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-async function sendPasswordResetEmail(emailAddress,uniqueUrl){
-    const html = `
+async function sendPasswordResetEmail(emailAddress, uniqueUrl) {
+  const html = `
         <div style="font-family: Arial, sans-serif; background-color: #F2F2F2; padding: 10px; margin: 0;">
             
             <!-- Header -->
@@ -39,15 +39,15 @@ async function sendPasswordResetEmail(emailAddress,uniqueUrl){
 
         </div>
         `;
-    const subject = "password reset request"
-    const response = await sendEmailWith3Retry(emailAddress,subject,html);
+  const subject = "password reset request";
+  const response = await sendEmailWith3Retry(emailAddress, subject, html);
 
-    return response;
+  return response;
 }
 
 async function sendEmail(emailAddress,subject,html){
     const request = {
-        from: "no-reply@wisnup.tech",
+        from: "no-reply@pocketwise.wisnup.tech",
         to: [emailAddress],
         subject: subject,
         html: html
@@ -56,43 +56,38 @@ async function sendEmail(emailAddress,subject,html){
     const response = await resend.emails.send(request);
     console.log(`resend api response: \n${JSON.stringify(response)}`);
 
-    const requestCopy = {
-        from: request["from"],
-        to: request["to"],
-        subject: request["subject"],
-    }
-    createEmailLog(requestCopy,response);
+  const requestCopy = {
+    from: request["from"],
+    to: request["to"],
+    subject: request["subject"],
+  };
+  createEmailLog(requestCopy, response);
 
-    if(response.error !== null)
-        throw new Error("failed to send email");
+  if (response.error !== null) throw new Error("failed to send email");
 
-    return response;
+  return response;
 }
 
-async function sendEmailWith3Retry(emailAddress,subject,html){
-    // sending email with 3x retry if error
-    try{
-        return await sendEmail(emailAddress,subject,html);
+async function sendEmailWith3Retry(emailAddress, subject, html) {
+  // sending email with 3x retry if error
+  try {
+    return await sendEmail(emailAddress, subject, html);
+  } catch (err) {
+    try {
+      console.log("retry send email 1x");
+      return await sendEmail(emailAddress, subject, html);
+    } catch (err) {
+      try {
+        console.log("retry send email 3x");
+        return await sendEmail(emailAddress, subject, html);
+      } catch (err) {
+        console.log(err);
+        return null;
+      }
     }
-    catch(err){
-        try{
-            console.log("retry send email 1x");
-            return await sendEmail(emailAddress,subject,html);
-        }
-        catch(err){
-            try{
-                console.log("retry send email 3x");
-                return await sendEmail(emailAddress,subject,html);
-            }
-            catch(err){
-                console.log(err);
-                return null;
-            }
-        }
-        
-    }
+  }
 }
 
 module.exports = {
-    sendPasswordResetEmail
-}
+  sendPasswordResetEmail,
+};

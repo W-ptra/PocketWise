@@ -10,15 +10,10 @@ const {
   getSaldoByUserId,
   updateSaldoByUserId,
 } = require("../database/postgres/saldoDatabase");
-const {
-  getTransactionTypesByIds,
-} = require("../database/postgres/transactionTypeDatabase");
 const customParseFormat = require("dayjs/plugin/customParseFormat");
-const { isInputInvalid } = require("../utils/validation");
 const dayjs = require("dayjs");
 dayjs.extend(customParseFormat);
 
-// Enum values matching the Prisma schema
 const TransactionType = {
   Income: 'Income',
   Rent: 'Rent',
@@ -160,15 +155,6 @@ async function createNewTransactions(request, h) {
   }
 }
 
-function isTransactionAmountInvalid(transactions){
-  for(const transaction in transactions){
-    const amount = typeof(transaction.amount) === "number" ? transaction.amount : parseInt(transaction.amount);
-    
-    if( (transaction.transactionTypeId === "1" && amount < 0) || (transaction.transactionTypeId !== "1" && amount > 0)) return true;
-  }
-  return false;
-}
-
 async function updateTransactions(request, h) {
   try {
     const user = request.user;
@@ -293,7 +279,7 @@ function getTransactionTypeComparisonFromTransaction(transactions) {
   };
 
   for (const transaction of transactions) {
-    const type = transaction.type; // Updated to use the new schema
+    const type = transaction.type;
     const amount = Math.abs(Number(transaction.amount));
 
     if (!comparison[type]) {

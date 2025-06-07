@@ -1,9 +1,9 @@
-const { v4:uuid } = require("uuid");
+const { v4: uuid } = require("uuid");
 
-function getUuidv4(){
-    return uuid();
+function getUuidv4() {
+  return uuid();
 }
 
 module.exports = {
-    getUuidv4
-}
+  getUuidv4,
+};

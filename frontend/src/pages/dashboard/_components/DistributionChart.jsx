@@ -31,6 +31,8 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import DateDropdown from "./DateDropdown";
 import LoadingSpinner from "../../../components/LoadingSpinner";
+import { getRequest } from "@/utils/api";
+import { getToken } from "@/utils/localStorage";
 
 const CATEGORY_COLORS = {
   // Expenses
@@ -105,10 +107,43 @@ const DUMMY_DATA = {
 };
 
 const fetchExpenseDistribution = async (timeframe = "today", type = "expenses") => {
-  console.log(`Fetching ${type} distribution for timeframe: ${timeframe}`);
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return DUMMY_DATA[timeframe][type];
+  console.log("fetchExpenseDistribution", timeframe,type);
+  let timeRange = "a";
+
+  if(timeframe === "today"){
+    timeRange = "day";
+  } else if(timeframe === "last_week"){
+    timeRange = "week";
+  } else if(timeframe === "last_month"){
+    timeRange= "month";
+  } else if(timeframe === "1_year"){
+    timeRange= "year";
+  }  else if(timeframe === "all_time"){
+    timeRange= "alltime";
+  }
+  
+  if(type === "expenses"){
+    type = "expense"
+  } else if(type === "incomes"){
+    type = "income"
+  }
+  
+  const result = await getRequest(`api/transaction/comparision?timeRange=${timeRange}&type=${type}`,getToken());
+
+  return formatDistributonData(result.data);
 };
+
+function formatDistributonData(comparisions){
+  const distributions = [];
+  console.log(comparisions);
+  for( const key in comparisions){
+    distributions.push({
+      name: key,
+      value: comparisions[key]
+    })
+  }
+  return distributions;
+}
 
 function giveIconByCategory(category) {
   switch (category) {
@@ -210,12 +245,15 @@ function giveIconByCategory(category) {
           <Wallet style={{ color: "#8B5CF6" }} className="w-4 h-4" />
         </div>
       );
-    default:
+    default: {
+      const randomColor = "#" + Math.floor(Math.random() * 16777215).toString(16);
+
       return (
         <div className="border-2 border-gray-300 rounded-full p-1">
-          <Info style={{ color: "#CBD5E1" }} className="w-4 h-4" />
+          <Info style={{ color: randomColor }} className="w-4 h-4" />
         </div>
       );
+    }
   }
 }
 

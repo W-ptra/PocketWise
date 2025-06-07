@@ -41,41 +41,6 @@ const DUMMY_DATA = {
   all_time: generateRandomChartData(DUMMY_CHART_DATA_BASE),
 };
 
-const fetchExpenseChart = async (timeframe = "today", visibility = "day") => {
-  let timeRange = "";
-
-  if(timeframe === "today"){
-    timeRange = "day";
-  } else if(timeframe === "last_week"){
-    timeRange = "week";
-  } else if(timeframe === "last_month"){
-    timeRange= "month";
-  } else if(timeframe === "1_year"){
-    timeRange= "year";
-  }  else if(timeframe === "all_time"){
-    timeRange= "alltime";
-  }
-  
-  let type = "";
-  if(visibility.expense && visibility.income){
-    type = "all";
-  } else if(visibility.expense){
-    type = "expense";
-  } else if(visibility.income){
-    type= "income";
-  }
-  console.log(`api/transaction/graph?timeRange=${timeRange}&type=${type}`);
-  const result = await getRequest(`api/transaction/graph?timeRange=${timeRange}&type=${type}`,getToken());
-  const graphData = result.data;
-  console.log(graphData);
-  
-  if(result.error){
-    return DUMMY_DATA[timeframe];
-  }
-
-  return graphData;
-};
-
 const formatCurrency = (value) => {
   if (value >= 1000000) {
     return `Rp${(value / 1000000).toFixed(1)}M`;
@@ -118,6 +83,50 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
+function formatChartData(data, timeframe) {
+  if (timeframe === "today") {
+    const hourlyData = {};
+    // Create entries from 00:00 to 23:59
+    for (let i = 0; i < 24; i++) {
+      const hour = i.toString().padStart(2, "0");
+      if (i === 23) {
+        hourlyData[`${hour}:59`] = {
+          createdAt: `${hour}:59`,
+          income: 0,
+          expense: 0,
+        };
+      } else {
+        hourlyData[`${hour}:00`] = {
+          createdAt: `${hour}:00`,
+          income: 0,
+          expense: 0,
+        };
+      }
+    }
+
+    // Fill in actual data
+    data.forEach((transaction) => {
+      const hour = new Date(transaction.createdAt)
+        .getHours()
+        .toString()
+        .padStart(2, "0");
+      const timeKey = hour === "23" ? `${hour}:59` : `${hour}:00`;
+      if (hourlyData[timeKey]) {
+        if (transaction.type === "Income") {
+          hourlyData[timeKey].income += Number(transaction.amount);
+        } else {
+          hourlyData[timeKey].expense += Math.abs(Number(transaction.amount));
+        }
+      }
+    });
+
+    return Object.values(hourlyData);
+  }
+
+  // For other timeframes, just return the data as is for now
+  return data;
+}
+
 function ExpenseChart() {
   const [timeframe, setTimeframe] = useState("today");
   const [visibility, setVisibility] = useState({
@@ -126,17 +135,26 @@ function ExpenseChart() {
   });
   const [activeFilter, setActiveFilter] = useState("All");
 
-  const {
-    data: chartData,
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
-    queryKey: ["expenseChart", timeframe, visibility],
-    queryFn: () => fetchExpenseChart(timeframe, visibility),
-    staleTime: 5 * 60 * 1000,
-    keepPreviousData: true,
-  });
+  // const {
+  //   data: chartData,
+  //   isLoading,
+  //   isError,
+  //   error,
+  // } = useQuery({
+  //   queryKey: ["expenseChart", timeframe, visibility],
+  //   queryFn: async () => {
+  //     const token = getToken();
+  //     if (!token) {
+  //       throw new Error("No authentication token found");
+  //     }
+
+  //     const response = await getRequest(
+  //       `api/transaction/graph?timeRange=${timeframe}`,
+  //       token
+  //     );
+  //     return response.data;
+  //   },
+  // });
 
   const handleTimeframeChange = (selectedTimeframe) => {
     setTimeframe(selectedTimeframe);
@@ -144,9 +162,9 @@ function ExpenseChart() {
 
   const formatYAxis = (value) => {
     if (value >= 1000000) {
-      return `${(value / 1000000).toFixed(1)}M`;
+      return `Rp${(value / 1000000).toFixed(1)}M`;
     } else if (value >= 1000) {
-      return `${value / 1000}K`;
+      return `Rp${(value / 1000).toFixed(0)}K`;
     }
     return value;
   };
@@ -170,28 +188,20 @@ function ExpenseChart() {
           return `${baseClass} bg-[#00AB6B] text-white shadow`;
         case "Expense":
           return `${baseClass} bg-[#FF6B6B] text-white shadow`;
-        case "Investment":
-          return `${baseClass} bg-[#FFB86B] text-white shadow`;
       }
     }
     return `${baseClass} bg-transparent text-gray-600 hover:bg-gray-200`;
   };
 
-  // if (isLoading && !chartData) {
-  //     return (
-  //         <div className="bg-white p-6 rounded-xl shadow-sm h-[458px] flex justify-center items-center">
-  //             <LoadingSpinner />
-  //         </div>
-  //     );
+  // if (isError) {
+  //   return (
+  //     <div className="bg-white p-6 rounded-xl shadow-sm h-[458px] flex justify-center items-center">
+  //       <p className="text-red-500">Error loading data: {error.message}</p>
+  //     </div>
+  //   );
   // }
 
-  if (isError) {
-    return (
-      <div className="bg-white p-6 rounded-xl shadow-sm h-[458px] flex justify-center items-center">
-        <p className="text-red-500">Error loading data: {error.message}</p>
-      </div>
-    );
-  }
+  const isLoading = false;
 
   return (
     <div
@@ -218,7 +228,7 @@ function ExpenseChart() {
       <div className="h-[350px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
-            data={chartData}
+            data={DUMMY_DATA[timeframe]}
             margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
           >
             <CartesianGrid
@@ -227,7 +237,7 @@ function ExpenseChart() {
               vertical={false}
             />
             <XAxis
-              dataKey="date"
+              dataKey="createdAt"
               axisLine={false}
               tickLine={false}
               dy={10}

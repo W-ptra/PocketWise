@@ -20,11 +20,11 @@ exports.plugin = {
                 path: "/income",
                 handler: transactionService.getAllIncome
             },
-            {
-                method: "GET",
-                path: "/graph",
-                handler: transactionGraphService.getAllTransactionForGraph
-            },
+            // {
+            //     method: "GET",
+            //     path: "/graph",
+            //     handler: transactionGraphService.getGraphData
+            // },
             {
                 method: "POST",
                 path: "/",

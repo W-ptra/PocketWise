@@ -5,6 +5,8 @@ const {
   getSingleTransactionByUserId,
   updateTransaction,
   deleteTransactions,
+  getExpensesByUserId,
+  getIncomeByUserId,
 } = require("../database/postgres/transactionDatabase");
 const {
   getSaldoByUserId,
@@ -31,12 +33,7 @@ const TransactionType = {
 async function getAllTransactions(request, h) {
   const user = request.user;
 
-  const queryOption = ({
-    type,
-    timeRange,
-    limit,
-    pagination,
-  } = request.query);
+  const queryOption = ({ type, timeRange, limit, pagination } = request.query);
 
   pagination = pagination === "true" ? true : false;
 
@@ -74,6 +71,50 @@ async function getAllTransactions(request, h) {
       .code(200);
   } catch (error) {
     console.error("Error in getAllTransactions:", error);
+    return h
+      .response({
+        error: "Internal server error",
+      })
+      .code(500);
+  }
+}
+
+async function getAllExpenses(request, h) {
+  const user = request.user;
+  const queryOption = ({ timeRange } = request.query);
+
+  try {
+    const expenses = await getExpensesByUserId(user.id, queryOption);
+    return h
+      .response({
+        message: "Successfully retrieve expenses data",
+        data: expenses,
+      })
+      .code(200);
+  } catch (error) {
+    console.error("Error in getAllExpenses:", error);
+    return h
+      .response({
+        error: "Internal server error",
+      })
+      .code(500);
+  }
+}
+
+async function getAllIncome(request, h) {
+  const user = request.user;
+  const queryOption = ({ timeRange } = request.query);
+
+  try {
+    const income = await getIncomeByUserId(user.id, queryOption);
+    return h
+      .response({
+        message: "Successfully retrieve income data",
+        data: income,
+      })
+      .code(200);
+  } catch (error) {
+    console.error("Error in getAllIncome:", error);
     return h
       .response({
         error: "Internal server error",
@@ -305,4 +346,6 @@ module.exports = {
   createNewTransactions,
   updateTransactions,
   deleteTransaction,
+  getAllExpenses,
+  getAllIncome,
 };

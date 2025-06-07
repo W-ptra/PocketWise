@@ -42,7 +42,7 @@ const DUMMY_DATA = {
 };
 
 const fetchExpenseChart = async (timeframe = "today", visibility = "day") => {
-  let timeRange = "a";
+  let timeRange = "";
 
   if(timeframe === "today"){
     timeRange = "day";

@@ -1,7 +1,27 @@
 import { Banknote } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { getRequest } from "~utils/api";
+import { getToken } from "~utils/localStorage";
+import LoadingSpinner from "~components/LoadingSpinner";
 
-function BalanceCard({ balance }) {
-  const formattedBalance = new Intl.NumberFormat("id-ID").format(balance);
+function BalanceCard() {
+  const { data: saldo, isLoading } = useQuery({
+    queryKey: ["saldo"],
+    queryFn: async () => {
+      const result = await getRequest("api/saldo", getToken());
+      if (result.error) throw new Error(result.error);
+      return result.data.amount;
+    },
+    staleTime: 30000,
+    cacheTime: 60000,
+    retry: 1,
+    retryDelay: 1000, 
+    refetchOnWindowFocus: false, 
+  });
+
+  if (isLoading) return <LoadingSpinner />;
+
+  const formattedBalance = new Intl.NumberFormat("id-ID").format(saldo || 0);
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm">

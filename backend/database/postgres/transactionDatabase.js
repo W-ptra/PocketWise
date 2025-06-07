@@ -89,6 +89,96 @@ async function updateTransaction(userId, transaction) {
   });
 }
 
+async function getExpensesByUserId(userId, queryOption = {}) {
+  const { timeRange } = queryOption;
+  let createdAtFilter;
+
+  if (timeRange) {
+    const now = new Date();
+    let fromDate = new Date(now);
+
+    if (timeRange === "day") {
+      fromDate.setDate(fromDate.getDate() - 1);
+    } else if (timeRange === "week") {
+      fromDate.setDate(fromDate.getDate() - 7);
+    } else if (timeRange === "month") {
+      fromDate.setMonth(fromDate.getMonth() - 1);
+    } else if (timeRange === "year") {
+      fromDate.setFullYear(fromDate.getFullYear() - 1);
+    }
+
+    fromDate.setHours(0, 0, 0, 0);
+
+    createdAtFilter = {
+      gte: fromDate,
+    };
+  }
+
+  return await prisma.transaction.findMany({
+    where: {
+      userId,
+      type: {
+        not: "Income",
+      },
+      ...(createdAtFilter && { createdAt: createdAtFilter }),
+    },
+    orderBy: {
+      createdAt: 'desc'
+    },
+    select: {
+      id: true,
+      title: true,
+      amount: true,
+      createdAt: true,
+      type: true,
+    },
+  });
+}
+
+async function getIncomeByUserId(userId, queryOption = {}) {
+  const { timeRange } = queryOption;
+  let createdAtFilter;
+
+  if (timeRange) {
+    const now = new Date();
+    let fromDate = new Date(now);
+
+    if (timeRange === "day") {
+      fromDate.setDate(fromDate.getDate() - 1);
+    } else if (timeRange === "week") {
+      fromDate.setDate(fromDate.getDate() - 7);
+    } else if (timeRange === "month") {
+      fromDate.setMonth(fromDate.getMonth() - 1);
+    } else if (timeRange === "year") {
+      fromDate.setFullYear(fromDate.getFullYear() - 1);
+    }
+
+    fromDate.setHours(0, 0, 0, 0);
+
+    createdAtFilter = {
+      gte: fromDate,
+    };
+  }
+
+  return await prisma.transaction.findMany({
+    where: {
+      userId,
+      type: "Income",
+      ...(createdAtFilter && { createdAt: createdAtFilter }),
+    },
+    orderBy: {
+      createdAt: 'desc'
+    },
+    select: {
+      id: true,
+      title: true,
+      amount: true,
+      createdAt: true,
+      type: true,
+    },
+  });
+}
+
 async function deleteTransactions(transactionId) {
   return await prisma.transaction.delete({
     where: {
@@ -201,4 +291,6 @@ module.exports = {
   getTransactionsByUserId,
   updateTransaction,
   deleteTransactions,
+  getExpensesByUserId,
+  getIncomeByUserId,
 };

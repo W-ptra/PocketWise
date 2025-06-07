@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import Navbar from "@/pages/dashboard/_components/Navbar";
 import Footer from "@/pages/dashboard/_components/Footer";
@@ -36,62 +38,44 @@ const chartData = [
     income: 2000000,
     expense: 1600000,
     investment: 1800000,
-  }
-];
-
-const distributionData = [
-  { name: "Kebutuhan pokok", value: 1 },
-  { name: "Jajan", value: 30 },
-  { name: "Investasi", value: 20 },
-  { name: "Lainnya", value: 10 },
+  },
 ];
 
 function DashboardPage() {
   const [profileImage, setProfileImage] = useState("/logo/User.png");
 
-  const [saldo, setSaldo] = useState(0);
+  // useEffect(() => {
+  //   async function fetchProfileImage() {
+  //     try {
+  //       const token = getToken();
+  //       const response = await getRequest("api/user/profile", token);
+  //       console.log("Full response:", response);
 
-  const fetchSaldo = async () => {
-    const result = await getRequest("api/saldo", getToken());
-    if (result.error) return;
+  //       if (response.data && response.data.profileImageUrl) {
+  //         console.log("Profile image URL:", response.data.profileImageUrl);
 
-    setSaldo(result.data.amount);
-  };
+  //         // For Google profile images, use our proxy
+  //         if (response.data.profileImageUrl.includes("googleusercontent.com")) {
+  //           const path = response.data.profileImageUrl.split(
+  //             "https://lh3.googleusercontent.com"
+  //           )[1];
+  //           const proxyUrl = `/googleusercontent${path}`;
+  //           console.log("Using proxy URL:", proxyUrl);
+  //           setProfileImage(proxyUrl);
+  //           return;
+  //         }
 
-  useEffect(() => {
-    fetchSaldo();
+  //         // For other images, use direct URL
+  //         setProfileImage(response.data.profileImageUrl);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching profile image:", error);
+  //       setProfileImage("/logo/User.png");
+  //     }
+  //   }
 
-    async function fetchProfileImage() {
-      try {
-        const token = getToken();
-        const response = await getRequest("api/user/profile", token);
-        console.log("Full response:", response);
-
-        if (response.data && response.data.profileImageUrl) {
-          console.log("Profile image URL:", response.data.profileImageUrl);
-
-          // For Google profile images, use our proxy
-          if (response.data.profileImageUrl.includes("googleusercontent.com")) {
-            const path = response.data.profileImageUrl.split(
-              "https://lh3.googleusercontent.com"
-            )[1];
-            const proxyUrl = `/googleusercontent${path}`;
-            console.log("Using proxy URL:", proxyUrl);
-            setProfileImage(proxyUrl);
-            return;
-          }
-
-          // For other images, use direct URL
-          setProfileImage(response.data.profileImageUrl);
-        }
-      } catch (error) {
-        console.error("Error fetching profile image:", error);
-        setProfileImage("/logo/User.png");
-      }
-    }
-
-    fetchProfileImage();
-  }, []);
+  //   fetchProfileImage();
+  // }, []);
 
   return (
     <div className="bg-[#F2F2F2]">
@@ -102,8 +86,8 @@ function DashboardPage() {
             <ExpenseChart data={chartData} />
           </div>
           <div className="grid grid-cols-1 gap-6">
-            <BalanceCard balance={saldo} />
-            <DistributionChart data={distributionData} title="Pengeluaran" />
+            <BalanceCard />
+            <DistributionChart />
           </div>
         </div>
 

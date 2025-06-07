@@ -106,41 +106,24 @@ const DUMMY_DATA = {
   },
 };
 
-const fetchExpenseDistribution = async (timeframe = "today", type = "expenses") => {
-  console.log("fetchExpenseDistribution", timeframe,type);
-  let timeRange = "a";
-
-  if(timeframe === "today"){
-    timeRange = "day";
-  } else if(timeframe === "last_week"){
-    timeRange = "week";
-  } else if(timeframe === "last_month"){
-    timeRange= "month";
-  } else if(timeframe === "1_year"){
-    timeRange= "year";
-  }  else if(timeframe === "all_time"){
-    timeRange= "alltime";
-  }
-  
-  if(type === "expenses"){
-    type = "expense"
-  } else if(type === "incomes"){
-    type = "income"
-  }
-  
-  const result = await getRequest(`api/transaction/comparision?timeRange=${timeRange}&type=${type}`,getToken());
-
-  return formatDistributonData(result.data);
-};
-
-function formatDistributonData(comparisions){
+function formatDistributonData(data) {
   const distributions = [];
-  console.log(comparisions);
-  for( const key in comparisions){
+  const map = new Map();
+  for (let i = 0; i < data.length; i++) {
+    if (map.has(data[i].type)) {
+      map.set(
+        data[i].type,
+        Number(map.get(data[i].type)) + Number(data[i].amount)
+      );
+    } else {
+      map.set(data[i].type, Number(data[i].amount));
+    }
+  }
+  for (const [key, value] of map.entries()) {
     distributions.push({
       name: key,
-      value: comparisions[key]
-    })
+      value: Number(value),
+    });
   }
   return distributions;
 }
@@ -214,8 +197,7 @@ function giveIconByCategory(category) {
           <GraduationCap style={{ color: "#818CF8" }} className="w-4 h-4" />
         </div>
       );
-    // Income
-    case "Salary":
+    case "Income":
       return (
         <div className="border-2 border-gray-300 rounded-full p-2">
           <Briefcase style={{ color: "#10B981" }} className="w-4 h-4" />
@@ -246,7 +228,8 @@ function giveIconByCategory(category) {
         </div>
       );
     default: {
-      const randomColor = "#" + Math.floor(Math.random() * 16777215).toString(16);
+      const randomColor =
+        "#" + Math.floor(Math.random() * 16777215).toString(16);
 
       return (
         <div className="border-2 border-gray-300 rounded-full p-1">
@@ -264,27 +247,37 @@ const CustomTooltip = ({ active, payload }) => {
 
     return (
       <div className="bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-gray-200/50 text-sm">
-        <p className="font-bold text-gray-800 mb-2 capitalize">{data.name.replace(/_/g, ' ')}</p>
+        <p className="font-bold text-gray-800 mb-2 capitalize">
+          {data.name.replace(/_/g, " ")}
+        </p>
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: color }}></span>
+              <span
+                className="w-2 h-2 rounded-full mr-2"
+                style={{ backgroundColor: color }}
+              ></span>
               <span className="text-gray-600">Amount</span>
             </div>
             <span className="font-semibold text-gray-900 ml-4">
-                {new Intl.NumberFormat("id-ID", {
-                    style: "currency",
-                    currency: "IDR",
-                    minimumFractionDigits: 0,
-                }).format(data.value)}
+              {new Intl.NumberFormat("id-ID", {
+                style: "currency",
+                currency: "IDR",
+                minimumFractionDigits: 0,
+              }).format(data.value)}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: color, opacity: 0.6 }}></span>
+              <span
+                className="w-2 h-2 rounded-full mr-2"
+                style={{ backgroundColor: color, opacity: 0.6 }}
+              ></span>
               <span className="text-gray-600">Share</span>
             </div>
-            <span className="font-semibold text-gray-900 ml-4">{data.percentage.toFixed(1)}%</span>
+            <span className="font-semibold text-gray-900 ml-4">
+              {data.percentage.toFixed(1)}%
+            </span>
           </div>
         </div>
       </div>
@@ -294,18 +287,45 @@ const CustomTooltip = ({ active, payload }) => {
   return null;
 };
 
-function DistributionChart({ title = "Distribution" }) {
+function DistributionChart() {
   const [timeframe, setTimeframe] = useState("today");
   const [type, setType] = useState("expenses");
 
   const {
-    data: distributionData,
+    data: distributionData = [],
     isLoading,
     isError,
     error,
   } = useQuery({
-    queryKey: ["distribution", timeframe, type],
-    queryFn: () => fetchExpenseDistribution(timeframe, type),
+    queryKey: ["distribution", type, timeframe],
+    queryFn: async () => {
+      const token = getToken();
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      // Convert timeframe to API format
+      const timeRangeMap = {
+        today: "day",
+        last_week: "week",
+        last_month: "month",
+        "1_year": "year",
+        all_time: "alltime"
+      };
+
+      const timeRange = timeRangeMap[timeframe] || "day";
+      
+      const result = await getRequest(
+        `api/transaction/${type === "expenses" ? "expenses" : "income"}?timeRange=${timeRange}`,
+        token
+      );
+
+      if (!result.data) {
+        return [];
+      }
+
+      return formatDistributonData(result.data);
+    },
     staleTime: 5 * 60 * 1000,
     keepPreviousData: true,
   });
@@ -313,14 +333,6 @@ function DistributionChart({ title = "Distribution" }) {
   const handleTimeframeChange = (selectedTimeframe) => {
     setTimeframe(selectedTimeframe);
   };
-
-  if (isLoading && !distributionData) {
-    return (
-      <div className="bg-white p-6 rounded-xl shadow-sm flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
 
   if (isError) {
     return (
@@ -343,8 +355,12 @@ function DistributionChart({ title = "Distribution" }) {
       <div className="flex justify-between items-center mb-1  ">
         <div className="flex items-center gap-4">
           <div className="flex justify-between gap-2">
-            <div className={`p-2 rounded-lg ${type === 'expenses' ? 'bg-red-50' : 'bg-green-50'}`}>
-              {type === 'expenses' ? (
+            <div
+              className={`p-2 rounded-lg ${
+                type === "expenses" ? "bg-red-50" : "bg-green-50"
+              }`}
+            >
+              {type === "expenses" ? (
                 <BanknoteArrowDown className="w-6 h-6 text-red-500" />
               ) : (
                 <BanknoteArrowUp className="w-6 h-6 text-green-500" />
@@ -353,21 +369,21 @@ function DistributionChart({ title = "Distribution" }) {
           </div>
           <div className="flex rounded-lg border border-gray-200 p-1">
             <button
-              onClick={() => setType('expenses')}
+              onClick={() => setType("expenses")}
               className={`px-3 py-1 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                type === 'expenses'
-                  ? 'bg-red-100 text-red-700'
-                  : 'text-gray-600 hover:bg-gray-100'
+                type === "expenses"
+                  ? "bg-red-100 text-red-700"
+                  : "text-gray-600 hover:bg-gray-100"
               }`}
             >
               Expenses
             </button>
             <button
-              onClick={() => setType('income')}
+              onClick={() => setType("income")}
               className={`px-3 py-1 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                type === 'income'
-                  ? 'bg-green-100 text-green-700'
-                  : 'text-gray-600 hover:bg-gray-100'
+                type === "income"
+                  ? "bg-green-100 text-green-700"
+                  : "text-gray-600 hover:bg-gray-100"
               }`}
             >
               Income
@@ -388,9 +404,12 @@ function DistributionChart({ title = "Distribution" }) {
               <div className="flex flex-col">
                 <span
                   className="text-sm font-medium"
-                  style={{ color: CATEGORY_COLORS[entry.name] || CATEGORY_COLORS.default }}
+                  style={{
+                    color:
+                      CATEGORY_COLORS[entry.name] || CATEGORY_COLORS.default,
+                  }}
                 >
-                  {entry.name.replace(/_/g, ' ')}
+                  {entry.name.replace(/_/g, " ")}
                 </span>
                 <span className="text-xs text-gray-500">
                   {entry.percentage.toFixed(1)}%
@@ -414,7 +433,9 @@ function DistributionChart({ title = "Distribution" }) {
                 {data.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={CATEGORY_COLORS[entry.name] || CATEGORY_COLORS.default}
+                    fill={
+                      CATEGORY_COLORS[entry.name] || CATEGORY_COLORS.default
+                    }
                   />
                 ))}
               </Pie>

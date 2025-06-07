@@ -69,7 +69,6 @@ function DashboardPage() {
 
   const [saldo, setSaldo] = useState(0);
 
-
   const fetchSaldo = async () => {
     const result = await getRequest("api/saldo", getToken());
     if (result.error) return;
@@ -78,7 +77,6 @@ function DashboardPage() {
   };
 
   useEffect(() => {
-
     fetchSaldo();
 
     async function fetchProfileImage() {
@@ -127,16 +125,16 @@ function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 grid-rows-3 gap-6 min-h-[600px]">
+        <div className="grid grid-cols-3 gap-6 min-h-[300px]">
           <div className="col-span-1 row-span-1">
             <UserCategory />
           </div>
           <div className="col-span-2 row-span-1 col-start-2">
             <AISuggestions />
           </div>
-          <div className="col-span-2 row-start-2 row-span-2">
-            <InvestmentSuggestions />
-          </div>
+        </div>
+        <div className="w-full">
+          <InvestmentSuggestions />
         </div>
       </div>
       <Footer />

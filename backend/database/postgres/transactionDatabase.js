@@ -2,8 +2,8 @@ const { PrismaClient } = require("../../generated/prisma");
 const prisma = new PrismaClient();
 
 async function createTransactions(transaction) {
-  return await prisma.transaction.create({ 
-    data: transaction
+  return await prisma.transaction.create({
+    data: transaction,
   });
 }
 
@@ -53,7 +53,7 @@ async function getTransactionsByUserId(option = {}) {
       where: { userId },
     }),
   ]);
-    
+
   return {
     data,
     total,
@@ -78,34 +78,27 @@ async function updateTransaction(userId, transaction) {
   return await prisma.transaction.update({
     where: {
       id: transaction.id,
-      userId: userId
+      userId: userId,
     },
     data: {
       title: transaction.title,
       amount: transaction.amount,
       createdAt: transaction.createdAt,
-      type: transaction.type
-    }
+      type: transaction.type,
+    },
   });
 }
 
 async function deleteTransactions(transactionId) {
   return await prisma.transaction.delete({
     where: {
-      id: transactionId
+      id: transactionId,
     },
   });
 }
 
 function queryOptionBuilder(option = {}) {
-  const {
-    userId,
-    page,
-    pageSize,
-    type,
-    timeRange,
-    limit,
-  } = option;
+  const { userId, page, pageSize, type, timeRange, limit } = option;
 
   let amountFilter;
   let createdAtFilter;
@@ -138,7 +131,7 @@ function queryOptionBuilder(option = {}) {
     fromDate.setHours(0, 0, 0, 0);
 
     createdAtFilter = {
-      gte: fromDate
+      gte: fromDate,
     };
   }
 
@@ -153,11 +146,7 @@ function queryOptionBuilder(option = {}) {
 }
 
 function queryOptionBuilderWithoutPagination(option = {}) {
-  const {
-    userId,
-    type,
-    timeRange,
-  } = option;
+  const { userId, type, timeRange } = option;
 
   let amountFilter;
   let createdAtFilter;
@@ -186,11 +175,11 @@ function queryOptionBuilderWithoutPagination(option = {}) {
     } else if (timeRange === "year") {
       fromDate.setFullYear(fromDate.getFullYear() - 1);
     }
-    
+
     fromDate.setHours(0, 0, 0, 0);
 
     createdAtFilter = {
-      gte: fromDate
+      gte: fromDate,
     };
   }
 

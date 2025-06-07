@@ -13,13 +13,13 @@ function logMiddleware(request, h) {
 
   return h.continue;
 }
-  
-function requestTimeCounting(request,h){
-    request.app.startTime = Date.now();
-    return h.continue;
+
+function requestTimeCounting(request, h) {
+  request.app.startTime = Date.now();
+  return h.continue;
 }
 
 module.exports = {
-    logMiddleware,
-    requestTimeCounting
-}
+  logMiddleware,
+  requestTimeCounting,
+};

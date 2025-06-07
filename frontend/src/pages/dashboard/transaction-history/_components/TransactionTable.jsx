@@ -20,6 +20,13 @@ import { getToken } from "~utils/localStorage";
 
 const columnHelper = createColumnHelper();
 
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+  }).format(value);
+};
+
 const columns = [
   columnHelper.accessor("Amount", {
     header: ({ column }) => {
@@ -120,9 +127,16 @@ function TransactionTable() {
       const result = await getRequest("api/transaction", token);
       if (result.error) throw new Error(result.error);
       
-      // Handle both paginated and non-paginated responses
+      // Get the transactions array from the response
       const transactions = result.data?.data || [];
-      return Array.isArray(transactions) ? transactions : transactions.data || [];
+      
+      // Transform the data to match column structure
+      return transactions.map(transaction => ({
+        Amount: formatCurrency(transaction.amount),
+        Title: transaction.title,
+        "Transaction Type": transaction.type,
+        Date: new Date(transaction.createdAt).toLocaleDateString()
+      }));
     },
   });
 

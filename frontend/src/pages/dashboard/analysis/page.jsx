@@ -1,136 +1,106 @@
 import Navbar from "@/pages/dashboard/_components/Navbar";
 import Footer from "@/pages/dashboard/_components/Footer";
+import AnalysisCard from "./_components/AnalysisCard";
 import { getRequest } from "~utils/api";
 import { getToken } from "@/utils/localStorage";
 import { useEffect, useState } from "react";
+import PredictionCard from "./_components/PredictionCard";
 
-function Analysis(){
-    const [monthlyJournal,setMonthlyJournal] = useState(null);
-    const [dailyJournal,setDailyJournal] = useState([]);
+function Analysis() {
+  const [monthlyInsights, setMonthlyInsights] = useState([]);
+  const [dailyInsights, setDailyInsights] = useState([]);
 
-    const fetchMonthlyJournal =  async () => {
-        const result = await getRequest("api/ai/journal/month",getToken());
-        console.log(result);
-        setMonthlyJournal(result.data);
+  // Sample insights for demonstration
+  const sampleDailyInsights = [
+    {
+      type: "highlight",
+      text: "You've spent more on dining out today compared to your usual daily average. Consider bringing lunch from home tomorrow.",
+      priority: "high"
+    },
+    {
+      type: "positive",
+      text: "No impulse purchases today! Keep up the good work on sticking to your planned expenses.",
+      priority: "medium"
+    },
+    {
+      type: "tip",
+      text: "Try the 24-hour rule: Wait a day before making non-essential purchases to avoid impulse buying.",
+      priority: "low"
     }
+  ];
 
-    const fetchDailyJournal =  async () => {
-        const result = await getRequest("api/ai/journal/day?timeRange=month",getToken());
-        console.log(result);
-        setDailyJournal(result.data);
+  const sampleMonthlyInsights = [
+    {
+      type: "highlight",
+      text: "Your subscription services have increased by 15% this month. Review your recurring payments to identify any unused services.",
+      priority: "high"
+    },
+    {
+      type: "positive",
+      text: "Your savings rate has improved! You're now saving 25% of your monthly income, up from 20% last month.",
+      priority: "medium"
+    },
+    {
+      type: "tip",
+      text: "Based on your spending pattern, you could save more by bulk buying your most frequently purchased items.",
+      priority: "low"
     }
+  ];
 
-    useEffect(()=>{
-        fetchMonthlyJournal();
-        fetchDailyJournal();
-    },[]);
-    
-    return (
+  const fetchMonthlyInsights = async () => {
+    try {
+      const result = await getRequest("api/ai/journal/month", getToken());
+      console.log(result);
+      setMonthlyInsights(result.data);
+    } catch (error) {
+      console.error("Error fetching monthly insights:", error);
+    }
+  };
 
-        <div>
-            <Navbar/>
-            <div className=" flex flex-col bg-gray-100 mx-10 mb-5">
-                <div className="mt-10 flex flex-col items-center justify-center gap-y-7">
-                    <div className="flex  flex-col justify-center gap-y-3 rounded bg-white px-5 py-5 shadow-md w-full">
-                        <h1 className="text-[1.5rem] font-bold text-[#00AB6B] text-center">Analisa Bulanan</h1>
-                    </div>
+  const fetchDailyInsights = async () => {
+    try {
+      const result = await getRequest(
+        "api/ai/journal/day?timeRange=month",
+        getToken()
+      );
+      console.log(result);
+      setDailyInsights(result.data);
+    } catch (error) {
+      console.error("Error fetching daily insights:", error);
+    }
+  };
 
-                    <div className="flex flex-col justify-center gap-y-5 rounded bg-white px-5 py-5 shadow-md w-full">
-                        <div className="flex flex-col">
-                            <div className="justify-left flex">
-                                <h2 className="text-[1.2rem] font-medium text-[#00AB6B]">Januari 2025</h2>
-                            </div>
-                            <div className="flex-1 border-[0.05rem] border-t border-gray-300"></div>
-                            <div className="justify-right flex flex-col">
-                                <ul className="flex flex-col gap-y-1 mt-3">
-                                    { monthlyJournal ? (
-                                        monthlyJournal.feedback.map( element => (
-                                            <li>{element}</li>
-                                        ) )
-                                    ) : (
-                                        <div>Transaction data is empty</div>
-                                    )}
+  useEffect(() => {
+    // Uncomment these when ready to fetch real data
+    // fetchMonthlyInsights();
+    // fetchDailyInsights();
+  }, []);
 
-                                </ul>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <div className="flex flex-col justify-center gap-y-3 rounded bg-white px-5 py-5 shadow-md w-full">
-                        <h2 className="text-[1.5rem] font-bold text-[#00AB6B] text-center">Prediksi pengeluaran</h2>
-                    </div>
-
-                    <div className="flex flex-col justify-center gap-y-5 rounded bg-white px-5 py-5 shadow-md w-full">
-                        <div className="flex flex-col">
-                           
-                            <div className="justify-right flex flex-col">
-                                <ul className="flex flex-col gap-y-1 mt-3">
-                                    {dailyJournal && dailyJournal.map( element => (
-                                        <div className="font-bold">{element.date} - {element.expense}</div>
-                                    ) ) }
-
-                                </ul>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <div className="flex flex-col justify-center gap-y-3 rounded bg-white px-5 py-5 shadow-md w-full mb-5 gap-x-1">
-                        <div className="grid grid-cols-[2fr_1fr] w-full">
-                            <div className="flex justify-center">
-                                <h2 className="text-[1.5rem] font-bold text-[#00AB6B]">Rekomendasi</h2>
-                            </div>
-                            <div className="flex justify-center">
-                                <h2 className="text-[1.5rem] font-bold text-[#00AB6B]">Hari,Tanggal</h2>
-                            </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-[2fr_1fr] w-full border-[0.1rem] border-white border-t-[#787878] pt-1 gap-x-1">
-                           <div 
-                            className="flex flex-row justify-center items-center"
-                           >
-                                Lorem ipsum, dolor sit amet consectetur adipisicing elit. Voluptatibus ab fugit cumque nemo possimus eaque libero magni placeat voluptatum ducimus? Ut unde minima magni molestiae, placeat porro omnis obcaecati alias.
-                           </div>
-                           <div
-                            className="flex flex-row justify-center items-center"
-                           >
-                                Lorem ipsum dolor sit amet consectetur adipisicing elit. Distinctio officia eligendi perferendis voluptate fugiat eius, error soluta et nihil vel ratione, dolore hic aut ipsa quod impedit autem quos nesciunt.
-                           </div>
-                           
-                        </div>
-                        <div className="grid grid-cols-[2fr_1fr] w-full border-[0.1rem] border-white border-t-[#787878] pt-1 gap-x-1">
-                           <div 
-                            className="flex flex-row justify-center items-center"
-                           >
-                                Lorem ipsum, dolor sit amet consectetur adipisicing elit. Voluptatibus ab fugit cumque nemo possimus eaque libero magni placeat voluptatum ducimus? Ut unde minima magni molestiae, placeat porro omnis obcaecati alias.
-                           </div>
-                           <div
-                            className="flex flex-row justify-center items-center"
-                           >
-                                Lorem ipsum dolor sit amet consectetur adipisicing elit. Distinctio officia eligendi perferendis voluptate fugiat eius, error soluta et nihil vel ratione, dolore hic aut ipsa quod impedit autem quos nesciunt.
-                           </div>
-                           
-                        </div>
-                        <div className="grid grid-cols-[2fr_1fr] w-full border-[0.1rem] border-white border-t-[#787878] pt-1 gap-x-1">
-                           <div 
-                            className="flex flex-row justify-center items-center"
-                           >
-                                Lorem ipsum, dolor sit amet consectetur adipisicing elit. Voluptatibus ab fugit cumque nemo possimus eaque libero magni placeat voluptatum ducimus? Ut unde minima magni molestiae, placeat porro omnis obcaecati alias.
-                           </div>
-                           <div
-                            className="flex flex-row justify-center items-center"
-                           >
-                                Lorem ipsum dolor sit amet consectetur adipisicing elit. Distinctio officia eligendi perferendis voluptate fugiat eius, error soluta et nihil vel ratione, dolore hic aut ipsa quod impedit autem quos nesciunt.
-                           </div>
-                           
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <Footer/>
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">Financial Insights</h1>
+        <p className="text-gray-600 mb-8">Smart analysis of your spending patterns and financial habits</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <AnalysisCard 
+            name="Daily Insights" 
+            insights={dailyInsights.length > 0 ? dailyInsights : sampleDailyInsights} 
+          />
+          <AnalysisCard 
+            name="Monthly Insights" 
+            insights={monthlyInsights.length > 0 ? monthlyInsights : sampleMonthlyInsights} 
+          />
         </div>
-    )
+        
+        <div className="mt-6">
+          <PredictionCard />
+        </div>
+      </div>
+      <Footer />
+    </div>
+  );
 }
 
 export default Analysis;

@@ -21,6 +21,7 @@ async function getSingleTransactionByUserId(userId, transactionId) {
 
 async function getTransactionByUserIdWithoutPagination(option = {}) {
   const queryOption = queryOptionBuilderWithoutPagination(option);
+  console.log(queryOption);
   const data = await prisma.transaction.findMany({
       ...queryOption,
       select: {
@@ -31,6 +32,7 @@ async function getTransactionByUserIdWithoutPagination(option = {}) {
         transactionType: true,
       },
   });
+  console.log(data);
   return data;
 }
 
@@ -188,7 +190,7 @@ function queryOptionBuilderWithoutPagination(option = {}) {
     orderBy = { createdAt: "desc" };
   }
 
-  if (timeRange) {
+  if (timeRange && timeRange !== "alltime") {
     const now = new Date();
     let fromDate = new Date(now);
 

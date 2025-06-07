@@ -10,6 +10,9 @@ const { getSaldoByUserId,updateSaldoByUserId } = require("../database/postgres/s
 const { getTransactionTypesByIds } = require("../database/postgres/transactionTypeDatabase");
 const { isInputInvalid, isTransactionDateInvalid } = require("../utils/validation");
 
+const ALLOWED_TIME_RANGE = ["day","week","month","year","alltime"];
+const ALLOWED_TRANSACTION_TYPE = ["income","expense","all"];
+
 async function getAllTransaction(request, h) {
   try{
     const user = request.user;
@@ -65,10 +68,28 @@ async function getAllTransactionTypeComparision(request,h){
       timeRange,
       limit
     } = request.query;
+
+    if(!ALLOWED_TIME_RANGE.includes(timeRange)){
+      return h
+        .response({
+          error: "time range is invalid",
+        })
+        .code(400);
+    }
+
+    if(!ALLOWED_TRANSACTION_TYPE.includes(type)){
+      return h
+        .response({
+          error: "type is invalid",
+        })
+        .code(400);
+    }
+
     queryOption["userId"] = user.id;
     const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
-    const transactionTypeComparision = getTransactionTypeComparationFromTransaction(transactions);
-  
+
+    const transactionTypeComparision = getTransactionTypeComparationFromTransaction(transactions,type);
+
     if(transactionTypeComparision.total === 0){
       return h
         .response({
@@ -117,6 +138,14 @@ async function createNewTransactions(request, h) {
       return h
         .response({
           message: "createdAt is invalid, please use YYYY-MM-DD HH:MM:SS format",
+        })
+        .code(400);
+    }
+
+    if(isTransactionAmountInvalid(transactions)){
+      return h
+        .response({
+          message: "amount is invalid, please make sure the type is number and negative value for expense and positive for income",
         })
         .code(400);
     }
@@ -175,20 +204,20 @@ function processTransactions(transactions) {
 
     let transactionTypeIdNumber = typeof(transactionTypeId) === "number" ? transactionTypeId : parseInt(transactionTypeId)
 
-    
-    if (transactionTypeIdNumber !== 1) {
-      return {
-        ...rest,
-        transactionTypeId: transactionTypeIdNumber,
-        amount: transaction.amount * -1,
-      };
-    }
-    
     return {
       transactionTypeId: transactionTypeIdNumber,
       ...rest
     };
   });
+}
+
+function isTransactionAmountInvalid(transactions){
+  for(const transaction in transactions){
+    const amount = typeof(transaction.amount) === "number" ? transaction.amount : parseInt(transaction.amount);
+    
+    if( (transaction.transactionTypeId === "1" && amount < 0) || (transaction.transactionTypeId !== "1" && amount > 0)) return true;
+  }
+  return false;
 }
 
 async function updateTransactions(request, h) {
@@ -392,20 +421,29 @@ async function updateSaldo(userId,amounts){
   }
 }
 
-function getTransactionTypeComparationFromTransaction(transactions){
-  let total = 0;
+function getTransactionTypeComparationFromTransaction(transactions,type){
   let comparation = {}
   transactions.forEach(transaction => {
-    if (!comparation[transaction.transactionType.name]) {
-      comparation[transaction.transactionType.name] = 0;
+
+    if(type === "expense"){
+      if (!comparation[transaction.transactionType.name]) {
+        comparation[transaction.transactionType.name] = 0;
+      }
+    } else if(type === "income"){
+      if (!comparation[transaction.title]) {
+        comparation[transaction.title] = 0;
+      }
     }
+
     let amount = typeof(transaction.amount) === "number" ? transaction.amount : parseInt(transaction.amount);
     amount = amount > 0 ? amount : (amount * -1);
 
-    comparation[transaction.transactionType.name] += amount;
-    total += amount;
+    if(type === "expense"){
+      comparation[transaction.transactionType.name] += amount;
+    } else if(type === "income"){
+      comparation[transaction.title] += amount;
+    }
   })
-  comparation["total"]=total;
   return comparation;
 }
 

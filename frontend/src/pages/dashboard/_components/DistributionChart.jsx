@@ -31,6 +31,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import DateDropdown from "./DateDropdown";
 import LoadingSpinner from "../../../components/LoadingSpinner";
+import { getRequest } from "@/utils/api";
 
 const CATEGORY_COLORS = {
   // Expenses
@@ -105,8 +106,10 @@ const DUMMY_DATA = {
 };
 
 const fetchExpenseDistribution = async (timeframe = "today", type = "expenses") => {
-  console.log(`Fetching ${type} distribution for timeframe: ${timeframe}`);
-  await new Promise((resolve) => setTimeout(resolve, 300));
+
+  const result = await getRequest("api/transaction/comparision?timeRange=alltime&type=income")
+
+
   return DUMMY_DATA[timeframe][type];
 };
 

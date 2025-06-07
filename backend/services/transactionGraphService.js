@@ -1,7 +1,7 @@
 const { getTransactionByUserIdWithoutPagination } = require("../database/postgres/transactionDatabase");
 const { isInputInvalid } = require("../utils/validation");
 
-const ALLOWED_TIME_RANGE = ["day","week","month","year"];
+const ALLOWED_TIME_RANGE = ["day","week","month","year","alltime"];
 const ALLOWED_TRANSACTION_TYPE = ["income","expense","all"];
 
 async function getAllTransactionForGraph(request,h){
@@ -37,7 +37,7 @@ async function getAllTransactionForGraph(request,h){
         }
         
         const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
-    
+        console.log(queryOption,transactions);
         if(transactions.length === 0){
             return h
                 .response({
@@ -100,7 +100,7 @@ function formatTransactionsToGraphData(transactions,timeRange){
             timeRangeKey = `${year}/${month}/${day} ${hour}:00:00`;
         } else if (timeRange === "week" || timeRange === "month"){
             timeRangeKey = `${year}/${month}/${day} 00:00:00`;
-        } else if (timeRange === "year"){
+        } else if (timeRange === "year" || timeRange === "alltime"){
             timeRangeKey = `${year}/${month}/01 00:00:00`;
         }
 

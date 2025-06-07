@@ -36,25 +36,7 @@ const chartData = [
     income: 2000000,
     expense: 1600000,
     investment: 1800000,
-  },
-  {
-    date: "20/05/2024",
-    income: 1900000,
-    expense: 1300000,
-    investment: 1700000,
-  },
-  {
-    date: "25/05/2024",
-    income: 1700000,
-    expense: 1500000,
-    investment: 1500000,
-  },
-  {
-    date: "30/05/2024",
-    income: 1500000,
-    expense: 1200000,
-    investment: 1400000,
-  },
+  }
 ];
 
 const distributionData = [

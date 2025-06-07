@@ -19,9 +19,7 @@ async function deleteRequest(endpoint=null,token=null,payload=null){
 }
 
 async function makeApiRequest(endpoint=null,method=null, token=null, payload=null,isFormData=false){
-    const url = `${API_URL}/${endpoint}`;
-
-    console.log(token)
+    const url = `${API_URL}/${endpoint}`;    
 
     let requestOption = {
         method

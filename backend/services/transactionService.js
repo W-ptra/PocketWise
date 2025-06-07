@@ -51,16 +51,18 @@ async function getAllTransactions(request, h) {
       ? await getTransactionsByUserId(queryOption)
       : await getTransactionByUserIdWithoutPagination(queryOption);
 
-    if (!transactions?.length) {
+    if (pagination) {
       return h.response({
-        error: "Transaction record is empty",
-      }).code(404);
+        message: "Successfully retrieve transactions data",
+        data: transactions || { data: [], total: 0, page: queryOption.page, pageSize: queryOption.pageSize, totalPages: 0 }
+      }).code(200);
     }
 
     return h.response({
       message: "Successfully retrieve transactions data",
-      data: transactions,
+      data: transactions || []
     }).code(200);
+
   } catch (error) {
     console.error('Error in getAllTransactions:', error);
     return h.response({

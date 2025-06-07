@@ -12,11 +12,6 @@ exports.plugin = {
             },
             {
                 method: "GET",
-                path: "/comparison",
-                handler: transactionService.getAllTransactionsTypeComparison
-            },
-            {
-                method: "GET",
                 path: "/graph",
                 handler: transactionGraphService.getAllTransactionForGraph
             },

@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { Calendar, Camera, InfoIcon } from "lucide-react";
 import * as Ariakit from "@ariakit/react";
+import { postRequest } from "~utils/api";
+import { getToken } from "~utils/localStorage";
+import { useMutation } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 
 const TransactionType = [
   "Income",
@@ -42,10 +46,46 @@ const TransactionForm = () => {
     }));
   };
 
+  const queryClient = useQueryClient();
+
+  const { mutate: createTransaction, isLoading } = useMutation({
+    mutationFn: async () => {
+      const token = getToken();
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const payload = {
+        title: formData.title,
+        amount: Number(formData.amount),
+        transactionType: formData.transactionType.replace(/\s+/g, '_'),
+        createdAt: new Date(formData.date).toISOString(),
+      };
+
+      const result = await postRequest("api/transaction", token, payload);
+      if (result.error) {
+        throw new Error(result.message || "Failed to create transaction");
+      }
+      return result;
+    },
+    onSuccess: () => {
+      setFormData({
+        amount: "",
+        title: "",
+        transactionType: TransactionType[0],
+        date: new Date().toISOString().split("T")[0],
+      });
+      
+      queryClient.invalidateQueries(["transactions"]);
+    },
+    onError: (error) => {
+      console.error("Transaction creation failed:", error);
+    }
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // TODO: Handle form submission
-    console.log(formData);
+    createTransaction();
   };
 
   return (
@@ -53,7 +93,10 @@ const TransactionForm = () => {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-700">Add Transaction</h2>
         <div className="flex items-center gap-2">
-          <button className="text-blue-400 border border-blue-400 px-4 py-2 rounded-lg transition-all duration-300 hover:bg-blue-400 hover:text-white cursor-pointer animate-bounce">
+          <button 
+            type="button" 
+            className="text-blue-400 border border-blue-400 px-4 py-2 rounded-lg transition-all duration-300 hover:bg-blue-400 hover:text-white cursor-pointer animate-bounce"
+          >
             <Camera className="w-4 h-4" />
           </button>
           <div
@@ -159,9 +202,10 @@ const TransactionForm = () => {
         <div className="pt-2">
           <button
             type="submit"
-            className="w-full rounded-lg bg-[#00AB6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#00AB6B]/90 focus:outline-none focus:ring-2 focus:ring-[#00AB6B] focus:ring-offset-2 transition-colors duration-200 cursor-pointer"
+            disabled={isLoading}
+            className="w-full rounded-lg bg-[#00AB6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#00AB6B]/90 focus:outline-none focus:ring-2 focus:ring-[#00AB6B] focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
-            Add Transaction
+            {isLoading ? "Adding..." : "Add Transaction"}
           </button>
         </div>
       </form>

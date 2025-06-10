@@ -21,12 +21,17 @@ exports.plugin = {
             {
                 method: "GET",
                 path: "/journal/month",
-                handler: aiService.getMonthJournay
+                handler: aiService.getMonthJournal
             },
             {
                 method: "GET",
                 path: "/journal/day",
                 handler: aiService.getDailyJournal
+            },
+            {
+                method: "GET",
+                path: "/journal/prediction",
+                handler: aiService.getTimePrediction
             }
         ]);
     }

@@ -4,13 +4,15 @@ import AnalysisCard from "./_components/AnalysisCard";
 import { getRequest } from "~utils/api";
 import { getToken } from "@/utils/localStorage";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import PredictionCard from "./_components/PredictionCard";
 
-function Analysis() {
-  const [monthlyInsights, setMonthlyInsights] = useState([]);
-  const [dailyInsights, setDailyInsights] = useState([]);
+const getMonthlyJournal = async (timeRange) => {
+  const result = await getRequest(`api/ai/journal/${timeRange}`,getToken());
+  return result.data.data;
+}
 
-  // Sample insights for demonstration
+function Analysis() {
   const sampleDailyInsights = [
     {
       type: "highlight",
@@ -47,34 +49,15 @@ function Analysis() {
     }
   ];
 
-  const fetchMonthlyInsights = async () => {
-    try {
-      const result = await getRequest("api/ai/journal/month", getToken());
-      console.log(result);
-      setMonthlyInsights(result.data);
-    } catch (error) {
-      console.error("Error fetching monthly insights:", error);
-    }
-  };
+  const { data: monthlyInsights = [], isLoadingMonthly, isErrorMonthky, errorMonthly } = useQuery({
+    queryKey: ['journal:monhtly'],
+    queryFn: () => getMonthlyJournal("month")
+  });
 
-  const fetchDailyInsights = async () => {
-    try {
-      const result = await getRequest(
-        "api/ai/journal/day?timeRange=month",
-        getToken()
-      );
-      console.log(result);
-      setDailyInsights(result.data);
-    } catch (error) {
-      console.error("Error fetching daily insights:", error);
-    }
-  };
-
-  useEffect(() => {
-    // Uncomment these when ready to fetch real data
-    // fetchMonthlyInsights();
-    // fetchDailyInsights();
-  }, []);
+  const { data: dailyInsights = [], isLoadingDaily, isErrorDaily, errorDaily } = useQuery({
+    queryKey: ['journal:daily'],
+    queryFn: () => getMonthlyJournal("day")
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">

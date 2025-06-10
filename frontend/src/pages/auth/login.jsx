@@ -8,7 +8,7 @@ import { FaGoogle } from "react-icons/fa";
 const googleOauthRedirectLink = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${
   import.meta.env.VITE_APP_GOOGLE_OAUTH_CLIENT_ID
 }&redirect_uri=${encodeURIComponent(
-  "http://localhost:3000/api/auth/google/callback"
+  `${import.meta.env.VITE_APP_API_URL}/api/auth/google/callback`
 )}&response_type=code&scope=openid%20email%20profile&access_type=offline&prompt=select_account`;
 
 function Login() {

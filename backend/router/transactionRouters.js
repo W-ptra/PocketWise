@@ -12,14 +12,19 @@ exports.plugin = {
             },
             {
                 method: "GET",
-                path: "/comparison",
-                handler: transactionService.getAllTransactionsTypeComparison
+                path: "/expenses",
+                handler: transactionService.getAllExpenses
             },
             {
                 method: "GET",
-                path: "/graph",
-                handler: transactionGraphService.getAllTransactionForGraph
+                path: "/income",
+                handler: transactionService.getAllIncome
             },
+            // {
+            //     method: "GET",
+            //     path: "/graph",
+            //     handler: transactionGraphService.getGraphData
+            // },
             {
                 method: "POST",
                 path: "/",

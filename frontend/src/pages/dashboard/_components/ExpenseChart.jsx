@@ -127,6 +127,25 @@ function formatChartData(data, timeframe) {
   return data;
 }
 
+const getTransactionData = async (type,timeRange) => {
+  console.log(timeRange);
+  let time = "";
+  if(timeRange === "today"){
+    time = "day";
+  } else if(timeRange === "last_week"){
+    time = "week";
+  } else if(timeRange === "last_month"){
+    time = "month";
+  } else if(timeRange === "1_year"){
+    time= "year";
+  } else if(timeRange === "all_time"){
+    time= "alltime";
+  }
+  const result = await getRequest(`api/transaction/${type}?timeRange=${time}`, getToken());
+  
+  return result.data;
+}
+
 function ExpenseChart() {
   const [timeframe, setTimeframe] = useState("today");
   const [visibility, setVisibility] = useState({
@@ -135,26 +154,108 @@ function ExpenseChart() {
   });
   const [activeFilter, setActiveFilter] = useState("All");
 
-  // const {
-  //   data: chartData,
-  //   isLoading,
-  //   isError,
-  //   error,
-  // } = useQuery({
-  //   queryKey: ["expenseChart", timeframe, visibility],
-  //   queryFn: async () => {
-  //     const token = getToken();
-  //     if (!token) {
-  //       throw new Error("No authentication token found");
-  //     }
+  const {
+    data: chartData,
+    isLoadingGraphData,
+    isErrorGraphData,
+    errorGraphData,
+  } = useQuery({
+    queryKey: ["expenseChart", timeframe, visibility],
+    queryFn: async () => {
+      const graphData = {};
 
-  //     const response = await getRequest(
-  //       `api/transaction/graph?timeRange=${timeframe}`,
-  //       token
-  //     );
-  //     return response.data;
-  //   },
-  // });
+      if (visibility.expense) {
+        const expenseData = await getTransactionData("expenses", timeframe);
+        graphData["expense"] = expenseData;
+      }
+
+      if (visibility.income) {
+        const incomeData = await getTransactionData("income", timeframe);
+        graphData["income"] = incomeData;
+      }
+
+      const formatDate = (dateStr) => {
+        const date = new Date(dateStr);
+        const pad = (n) => n.toString().padStart(2, '0');
+
+        const year = date.getFullYear();
+        const month = pad(date.getMonth() + 1);
+        const day = pad(date.getDate());
+        const hour = pad(date.getHours());
+
+        switch (timeframe) {
+          case 'today':
+            return `${year}/${month}/${day} ${hour}:00:00`;
+          case 'last_week':
+          case 'last_month':
+            return `${year}/${month}/${day} 00:00:00`;
+          case 'last_year':
+          case 'all_time':
+            return `${year}/${month}/01 00:00:00`; // Month bucket on day 01
+          default:
+            return `${year}/${month}/${day} 00:00:00`;
+        }
+      };
+
+      const aggregatedData = {};
+
+      const addToAggregation = (type, data) => {
+        for (const item of data) {
+          const dateKey = formatDate(item.createdAt);
+          const amount = parseFloat(item.amount);
+
+          if (!aggregatedData[dateKey]) {
+            aggregatedData[dateKey] = { date: dateKey };
+          }
+
+          if (!aggregatedData[dateKey][type]) {
+            aggregatedData[dateKey][type] = 0;
+          }
+
+          aggregatedData[dateKey][type] += amount;
+        }
+      };
+
+      if (graphData.expense) {
+        addToAggregation('expense', graphData.expense);
+      }
+
+      if (graphData.income) {
+        addToAggregation('income', graphData.income);
+      }
+
+      if (visibility.expense && visibility.income) {
+        for (const key in aggregatedData) {
+          if (!aggregatedData[key].expense) {
+            aggregatedData[key].expense = 0;
+          }
+          if (!aggregatedData[key].income) {
+            aggregatedData[key].income = 0;
+          }
+        }
+      }
+
+      const parseDateKey = (dateKey) => {
+        // Format: YYYY:MM:DD HH:MM:SS
+        const [datePart, timePart] = dateKey.split(' ');
+        const [year, month, day] = datePart.split(':').map(Number);
+        const [hour, minute, second] = timePart.split(':').map(Number);
+        return new Date(year, month - 1, day, hour, minute, second);
+      };
+
+      const finalData = Object.values(aggregatedData).sort((a, b) => {
+        return parseDateKey(a.date) - parseDateKey(b.date);
+      });
+
+      console.log("aaaaaaaaaaaaaaaaaaaaaaaaa");
+      console.log(DUMMY_DATA[timeframe])
+      console.log(finalData);
+      return finalData;
+    },
+
+
+
+  });
 
   const handleTimeframeChange = (selectedTimeframe) => {
     setTimeframe(selectedTimeframe);
@@ -226,86 +327,88 @@ function ExpenseChart() {
       )}
 
       <div className="h-[350px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={DUMMY_DATA[timeframe]}
-            margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-          >
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="#e0e0e0"
-              vertical={false}
-            />
-            <XAxis
-              dataKey="createdAt"
-              axisLine={false}
-              tickLine={false}
-              dy={10}
-              tick={{ fontSize: 12, fill: "#6b7280" }}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tickFormatter={formatYAxis}
-              tick={{ fontSize: 12, fill: "#6b7280" }}
-              dx={-10}
-              width={50}
-            />
-            <Tooltip
-              cursor={{
-                stroke: "#00AB6B",
-                strokeWidth: 1,
-                strokeDasharray: "3 3",
-              }}
-              content={<CustomTooltip />}
-            />
-            {visibility.income && (
-              <Line
-                type="linear"
-                dataKey="income"
-                stroke="#00AB6B"
-                strokeWidth={2.5}
-                dot={false}
-                activeDot={{
-                  r: 6,
-                  strokeWidth: 2,
-                  fill: "#00AB6B",
-                  stroke: "#fff",
-                }}
+        {chartData && (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={chartData}
+              margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="#e0e0e0"
+                vertical={false}
               />
-            )}
-            {visibility.expense && (
-              <Line
-                type="linear"
-                dataKey="expense"
-                stroke="#FF6B6B"
-                strokeWidth={2.5}
-                dot={false}
-                activeDot={{
-                  r: 6,
-                  strokeWidth: 2,
-                  fill: "#FF6B6B",
-                  stroke: "#fff",
-                }}
+              <XAxis
+                dataKey="createdAt"
+                axisLine={false}
+                tickLine={false}
+                dy={10}
+                tick={{ fontSize: 12, fill: "#6b7280" }}
               />
-            )}
-            {visibility.investment && (
-              <Line
-                type="linear"
-                dataKey="investment"
-                stroke="#FFB86B"
-                strokeWidth={2.5}
-                dot={false}
-                activeDot={{
-                  r: 6,
-                  strokeWidth: 2,
-                  fill: "#FFB86B",
-                  stroke: "#fff",
-                }}
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={formatYAxis}
+                tick={{ fontSize: 12, fill: "#6b7280" }}
+                dx={-10}
+                width={50}
               />
-            )}
-          </LineChart>
-        </ResponsiveContainer>
+              <Tooltip
+                cursor={{
+                  stroke: "#00AB6B",
+                  strokeWidth: 1,
+                  strokeDasharray: "3 3",
+                }}
+                content={<CustomTooltip />}
+              />
+              {visibility.income && (
+                <Line
+                  type="linear"
+                  dataKey="income"
+                  stroke="#00AB6B"
+                  strokeWidth={2.5}
+                  dot={false}
+                  activeDot={{
+                    r: 6,
+                    strokeWidth: 2,
+                    fill: "#00AB6B",
+                    stroke: "#fff",
+                  }}
+                />
+              )}
+              {visibility.expense && (
+                <Line
+                  type="linear"
+                  dataKey="expense"
+                  stroke="#FF6B6B"
+                  strokeWidth={2.5}
+                  dot={false}
+                  activeDot={{
+                    r: 6,
+                    strokeWidth: 2,
+                    fill: "#FF6B6B",
+                    stroke: "#fff",
+                  }}
+                />
+              )}
+              {visibility.investment && (
+                <Line
+                  type="linear"
+                  dataKey="investment"
+                  stroke="#FFB86B"
+                  strokeWidth={2.5}
+                  dot={false}
+                  activeDot={{
+                    r: 6,
+                    strokeWidth: 2,
+                    fill: "#FFB86B",
+                    stroke: "#fff",
+                  }}
+                />
+              )}
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       <div className="flex justify-center items-center mt-4">

@@ -96,7 +96,7 @@ async function getExpensesByUserId(userId, queryOption = {}) {
   const { timeRange } = queryOption;
   let createdAtFilter;
 
-  if (timeRange) {
+  if (timeRange && timeRange !== "alltime") {
     const now = new Date();
     let fromDate = new Date(now);
 
@@ -142,7 +142,7 @@ async function getIncomeByUserId(userId, queryOption = {}) {
   const { timeRange } = queryOption;
   let createdAtFilter;
 
-  if (timeRange) {
+  if (timeRange  && timeRange !== "alltime") {
     const now = new Date();
     let fromDate = new Date(now);
 

@@ -1,5 +1,8 @@
+import { getRequest } from '@/utils/api'
+import { getToken } from '@/utils/localStorage'
 import { CircleUser, Sparkles, Target, Wallet, LineChart, Crown, Star, Rocket } from 'lucide-react'
 import { useState } from 'react'
+import { useQuery } from "@tanstack/react-query";
 
 const categories = {
     "Overspender": {
@@ -47,10 +50,28 @@ const categories = {
         "level": 2
     }
 }
+// Overspender, Beginner, Saver, Balanced
+
+const getLifestylePrediction = async () => {
+  const result = await getRequest("api/ai/journal/lifestyle",getToken());
+  return result.data;
+}
 
 const UserCategory = () => {
   const [showTips, setShowTips] = useState(false);
-  const userCategory = categories["Beginner"];
+
+  const {
+    data: userCategory = categories["Beginner"],
+    isLoadingGraphData,
+    isErrorGraphData,
+    errorGraphData,
+  } = useQuery({
+    queryKey: ["expenseChart", "lifestyle"],
+    queryFn: async () => {
+      const lifestyle = await getLifestylePrediction();
+      return categories[lifestyle];
+    }
+  });
 
   return (
     <div className="relative bg-gradient-to-br from-white via-[#F8FDFB] to-white p-6 rounded-xl shadow-sm h-full overflow-hidden border border-[#00AB6B]/10">

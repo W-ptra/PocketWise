@@ -32,6 +32,16 @@ exports.plugin = {
                 method: "GET",
                 path: "/journal/prediction",
                 handler: aiService.getTimePrediction
+            },
+            {
+                method: "GET",
+                path: "/journal/lifestyle",
+                handler: aiService.getLifestylePrediction
+            },
+            {
+                method: "GET",
+                path: "/journal/suggestion",
+                handler: aiService.getAiSuggestion
             }
         ]);
     }

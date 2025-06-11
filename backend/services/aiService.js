@@ -5,7 +5,7 @@ const {
 } = require("../database/postgres/transactionDatabase");
 const { setMlJournal,getMlJournal } = require("../database/redis/cacheMlJournal");
 const { isInputInvalid } = require("../utils/validation");
-const { getMonthlyAnalysisSchema,getTimePredictionPrompt } = require("../utils/schema");
+const { getMonthlyAnalysisSchema,getTimePredictionPrompt,getAiSuggestionPrompt } = require("../utils/schema");
 require("dotenv").config();
 
 const ML_HOST = process.env.ML_HOST;
@@ -78,7 +78,7 @@ async function getDailyJournal(request,h) {
                 .code(404);
         }
     
-        const mlJournalCache = await getMlJournal(`ml:${journalType}:${transactions}`,transactions)
+        const mlJournalCache = await getMlJournal(`ml:${journalType}:${transactions}::${user.id}`,transactions)
     
         if (mlJournalCache){
             return h
@@ -106,7 +106,7 @@ async function getDailyJournal(request,h) {
         const deepseekAnswer = await ask(JSON.stringify(deepseekPrompt));
         const deepseekJsonParse = JSON.parse(deepseekAnswer);
 
-        setMlJournal(`ml:${journalType}:${transactions}`,transactions,deepseekJsonParse);
+        setMlJournal(`ml:${journalType}:${transactions}:${user.id}`,transactions,deepseekJsonParse);
     
         return h
             .response({
@@ -197,6 +197,153 @@ async function getTimePrediction(request,h) {
             .response({
                 message: `successfully retrive daily journal with time range ${timeRange}`,
                 data: predictionResult
+            })
+            .code(200);
+    } catch(err){
+        console.error(err)
+        return h
+            .response({
+                error: "something went wrong, please contact pocketwise support",
+            })
+            .code(500);
+    }
+}
+
+async function getLifestylePrediction(request,h){
+    try{
+        const user = request.user;
+        const journalType = "lifestyle";
+        const pagination = {
+            page: 1,
+            pageSize: 100,
+        }
+    
+        const timeRange = "day";
+    
+        const limit = 100;
+    
+        const queryOption = {
+            pagination,
+            timeRange,
+            limit,
+            userId: user.id
+        }
+    
+        const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
+
+        if(transactions.length === 0){
+            return h
+                .response({
+                    message: "transaction record is empty",
+                })
+                .code(404);
+        }
+    
+        const mlJournalCache = await getMlJournal(`ml:${journalType}:${transactions}:${user.id}`,transactions)
+    
+        if (mlJournalCache){
+            return h
+                .response({
+                message: "successfully retrive month journal",
+                data: mlJournalCache,
+                })
+                .code(200);
+        }
+
+        const journal_entry = formatMlMonthlyRequest(transactions);
+    
+        const option = {
+            method: "POST",
+            headers: {
+                "Content-Type":"application/json"
+            },
+            body: JSON.stringify({journal_entry})
+        }
+        
+        const result = await fetch(`${ML_HOST}/ai/journal/lifestyle`,option);
+        const data = await result.json();
+        const prediction = data.prediction;
+
+        let lifestyle = "";
+        if(prediction === "Overspender"){
+            lifestyle = "Overspender"
+        } else if(prediction === "Beginner"){
+            lifestyle = "Beginner"
+        } else if(prediction === "Saver"){
+            lifestyle = "Savvy Saver"
+        } else if(prediction === "Balanced"){
+            lifestyle = "Balanced"
+        }
+
+        await getMlJournal(`ml:${journalType}:${transactions}:${user.id}`,lifestyle)
+
+        return h
+            .response({
+                message: "successfull get lifestyle prediction",
+                data: lifestyle
+            })
+            .code(200);
+    } catch(err){
+        console.error(err)
+        return h
+            .response({
+                error: "something went wrong, please contact pocketwise support",
+            })
+            .code(500);
+    }
+}
+
+async function getAiSuggestion(request,h){
+    try{
+        const user = request.user;
+        const journalType = "suggestion";
+        const pagination = {
+            page: 1,
+            pageSize: 100,
+        }
+    
+        const timeRange = "alltime";
+    
+        const limit = 100;
+    
+        const queryOption = {
+            pagination,
+            timeRange,
+            limit,
+            userId: user.id
+        }
+    
+        const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
+
+        if(transactions.length === 0){
+            return h
+                .response({
+                    message: "transaction record is empty",
+                })
+                .code(404);
+        }
+    
+        const mlJournalCache = await getMlJournal(`ml:${journalType}:${transactions}:${user.id}`,transactions)
+    
+        if (mlJournalCache){
+            return h
+                .response({
+                message: "successfully retrive month journal",
+                data: mlJournalCache,
+                })
+                .code(200);
+        }
+    
+        const deepseekPrompt = getAiSuggestionPrompt(transactions);
+        const deepseekAnswer = await ask(JSON.stringify(deepseekPrompt));
+        const deepseekResult = JSON.parse(deepseekAnswer);
+
+        await setMlJournal(`ml:${journalType}:${transactions}:${user.id}`,transactions,deepseekResult)
+
+        return h
+            .response({
+                message: "successfull get ai suggestion",
+                data: deepseekResult
             })
             .code(200);
     } catch(err){
@@ -331,7 +478,7 @@ async function getMonthJournal(request,h) {
                 .code(404);
         }
     
-        const mlJournalCache = await getMlJournal(`ml:${journalType}:${transactions}`,transactions)
+        const mlJournalCache = await getMlJournal(`ml:${journalType}:${transactions}:${user.id}`,transactions)
     
         if (mlJournalCache){
             return h
@@ -359,7 +506,7 @@ async function getMonthJournal(request,h) {
         const deepseekAnswer = await ask(JSON.stringify(deepseekPrompt));
         const deepseekJsonParse = JSON.parse(deepseekAnswer);
 
-        setMlJournal(`ml:${journalType}:${transactions}`,transactions,deepseekJsonParse);
+        setMlJournal(`ml:${journalType}:${transactions}:${user.id}`,transactions,deepseekJsonParse);
     
         return h
             .response({
@@ -407,5 +554,7 @@ module.exports = {
     getTransactionsUsingOcr,
     getTimePrediction,
     getDailyJournal,
-    getMonthJournal
+    getMonthJournal,
+    getLifestylePrediction,
+    getAiSuggestion
 }

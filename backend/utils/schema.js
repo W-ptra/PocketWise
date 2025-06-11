@@ -135,8 +135,40 @@ function getTimePredictionPrompt(transactions,mlPredictionValue,timeRange){
     };
 }
 
+function getAiSuggestionPrompt(transactions){
+  return {
+    description: `Using this transactions data: ${transactions}, give your best 3 suggestion, analysis and advice about 3 topic: 'tip','insight' and 'investment', the amount is on IDR so when you mention number write like this 'Rp. 50.000' .Answer this request in JSON format with this JSON schema only like '{ //content }', no other string outside the angle bracket '{'/'}', dont hallucinate, follow the order`,
+    type: "object",
+    property: {
+        data: {
+          description: "this is object your suggestion",
+          type: "object",
+          property: {
+            property: {
+              tip: {
+                description: "give your tips about the provided transactions, mention the amount and explain it, answer must no longer than 300 characters",
+                type: "string",
+              },
+              insight: {
+                description: "give your inisght about the provided transactions, give your analysis about the transaction such as trend etc., answer must no longer than 300 charactert",
+                type: "string",
+              },
+              investment: {
+                description: "give your investment suggestion based on the provided transactions, mention the potential return of investment and some general tips of investment, answer must no longer than 300 character",
+                type: "string",
+              },
+            },
+            required: ["tip", "insight", "investment"],
+          },
+        },
+        required: ["data"],
+    },
+  }
+}
+
 module.exports = {
   OCRSchema,
   getMonthlyAnalysisSchema,
-  getTimePredictionPrompt
+  getTimePredictionPrompt,
+  getAiSuggestionPrompt
 };

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OCR Transaction Upload Test</title>
+</head>
+<body>
+  <h1>Upload Receipt Image or PDF for OCR</h1>
+
+  <form id="uploadForm">
+    <label for="image">Image or PDF File:</label><br />
+    <input type="file" id="image" name="image" accept=".png, .jpg, .jpeg, .pdf" required /><br /><br />
+
+    <button type="submit">Upload and Extract Transactions</button>
+  </form>
+
+  <pre id="response"></pre>
+
+  <script>
+    document.getElementById("uploadForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      const fileInput = document.getElementById("image");
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert("Please select a file.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("image", file);
+
+      try {
+        const response = await fetch("http://localhost:3000/api/ai/ocr", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6Ildpc251IFB1dHJhIEZDMDA1RDVZMTM0NyIsImVtYWlsIjoiZmMwMDVkNXkxMzQ3QHN0dWRlbnQuZGV2YWNhZGVteS5pZCIsInBhc3N3b3JkIjpudWxsLCJnb29nbGVJZCI6IjExNjQwMDQ4NTE4NzQ5MDA4MTk2OSIsInByb2ZpbGVJbWFnZVVybCI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0o2aVBqYWpZMU9PVldtR3NZb25uTHllUzlSZVNnZm0tM2pFTkY5QWNicUVpRXNwdz1zOTYtYyIsImF1dGhNZXRob2QiOiJnb29nbGUiLCJpYXQiOjE3NDk2NTQ3MjIsImV4cCI6MTc0OTY5MDcyMn0.fxSdUeVflXaWO0GmixG1vz9hsUIoqCqOgxmcxdqNxV8`
+          },
+          body: formData
+        });
+
+        const result = await response.json();
+        document.getElementById("response").textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        document.getElementById("response").textContent = "Error: " + error.message;
+      }
+    });
+  </script>
+</body>
+</html>

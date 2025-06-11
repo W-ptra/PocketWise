@@ -16,7 +16,7 @@ exports.plugin = {
                         allow: "multipart/form-data"
                     }
                 },
-                handler: aiService.getTransactionsUsingOcr
+                handler: aiService.insertTransactionUsingOCR
             },
             {
                 method: "GET",

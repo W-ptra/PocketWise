@@ -218,7 +218,7 @@ async function getTimePrediction(request,h) {
     
         const queryOption = {
             userId: user.id,
-            timeRange: "year"
+            timeRange: "alltime"
         }
     
         const transactions = await getTransactionByUserIdWithoutPagination(queryOption);

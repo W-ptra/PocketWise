@@ -304,7 +304,6 @@ function DistributionChart() {
         throw new Error("No authentication token found");
       }
 
-      // Convert timeframe to API format
       const timeRangeMap = {
         today: "day",
         last_week: "week",
@@ -319,6 +318,8 @@ function DistributionChart() {
         `api/transaction/${type === "expenses" ? "expenses" : "income"}?timeRange=${timeRange}`,
         token
       );
+
+      console.log(result);
 
       if (!result.data) {
         return [];

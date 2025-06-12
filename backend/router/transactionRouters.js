@@ -1,5 +1,4 @@
 const transactionService = require("../services/transactionService")
-const transactionGraphService = require("../services/transactionGraphService")
 
 exports.plugin = {
     name: "transactionRoutes",
@@ -20,11 +19,6 @@ exports.plugin = {
                 path: "/income",
                 handler: transactionService.getAllIncome
             },
-            // {
-            //     method: "GET",
-            //     path: "/graph",
-            //     handler: transactionGraphService.getGraphData
-            // },
             {
                 method: "POST",
                 path: "/",

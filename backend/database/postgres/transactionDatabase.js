@@ -18,7 +18,8 @@ async function getSingleTransactionByUserId(userId, transactionId) {
 
 async function getTransactionByUserIdWithoutPagination(option = {}) {
   const queryOption = queryOptionBuilderWithoutPagination(option);
-  return await prisma.transaction.findMany({
+
+  const data = await prisma.transaction.findMany({
     ...queryOption,
     select: {
       id: true,
@@ -28,6 +29,8 @@ async function getTransactionByUserIdWithoutPagination(option = {}) {
       type: true,
     },
   });
+
+  return data;
 }
 
 async function getTransactionsByUserId(option = {}) {
@@ -93,7 +96,7 @@ async function getExpensesByUserId(userId, queryOption = {}) {
   const { timeRange } = queryOption;
   let createdAtFilter;
 
-  if (timeRange) {
+  if (timeRange && timeRange !== "alltime") {
     const now = new Date();
     let fromDate = new Date(now);
 
@@ -139,7 +142,7 @@ async function getIncomeByUserId(userId, queryOption = {}) {
   const { timeRange } = queryOption;
   let createdAtFilter;
 
-  if (timeRange) {
+  if (timeRange  && timeRange !== "alltime") {
     const now = new Date();
     let fromDate = new Date(now);
 
@@ -243,11 +246,7 @@ function queryOptionBuilderWithoutPagination(option = {}) {
   let orderBy;
 
   if (type === "expense") {
-    amountFilter = { lt: 0 };
     orderBy = { amount: "asc" };
-  } else if (type === "income") {
-    amountFilter = { gt: 0 };
-    orderBy = { amount: "desc" };
   } else {
     orderBy = { createdAt: "desc" };
   }

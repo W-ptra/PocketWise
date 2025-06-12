@@ -1,5 +1,14 @@
+import { getRequest } from "@/utils/api";
+import { getToken } from "@/utils/localStorage";
 import { Sparkles, WandSparkles, CircleAlert, ThumbsUp, Info, TrendingUp, Lightbulb, PiggyBank } from "lucide-react";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+
+const getAiSuggestion = async () => {
+  const result = await getRequest("api/ai/journal/suggestion",getToken());
+  console.log(result);
+  return result.data.data;
+}
 
 function AISuggestions() {
   const [likedStates, setLikedStates] = useState({
@@ -8,6 +17,20 @@ function AISuggestions() {
     investment: false
   });
   const [showTooltip, setShowTooltip] = useState(false);
+
+    const {
+      data: aiSuggestion = {},
+      isLoadingGraphData,
+      isErrorGraphData,
+      errorGraphData,
+    } = useQuery({
+      queryKey: ["expenseChart", "suggestion"],
+      queryFn: async () => {
+        const result = await getAiSuggestion();
+        console.log(result);
+        return result;
+      }
+    });
 
   const handleLike = (key) => {
     setLikedStates(prev => ({
@@ -37,7 +60,7 @@ function AISuggestions() {
             <div className="flex items-start gap-2">
               <Lightbulb className="w-5 h-5 text-[#00AB6B] mt-0.5 shrink-0" />
               <p className="text-gray-800 text-sm">
-                You spent <span className="text-[#FF6B6B] font-bold">9.1%</span> of your income on <span className="font-bold">Eating Out</span> this month. Try cooking at home 2x a week to save up to <span className="text-[#00AB6B] font-bold">Rp900.153</span>!
+                {aiSuggestion.tip ? aiSuggestion.tip : "" }
               </p>
             </div>
             <div className="flex items-center gap-2 mt-1.5 ml-7">
@@ -57,7 +80,7 @@ function AISuggestions() {
             <div className="flex items-start gap-2">
               <TrendingUp className="w-5 h-5 text-[#4ECDC4] mt-0.5 shrink-0" />
               <p className="text-gray-800 text-sm">
-                Your savings rate is <span className="text-[#4ECDC4] font-bold">12%</span> higher than last month. Keep it up! Consider automating your savings for consistent growth.
+                {aiSuggestion.insight ? aiSuggestion.insight : "" }
               </p>
             </div>
             <div className="flex items-center gap-2 mt-1.5 ml-7">
@@ -77,7 +100,7 @@ function AISuggestions() {
             <div className="flex items-start gap-2">
               <PiggyBank className="w-5 h-5 text-[#FFB86B] mt-0.5 shrink-0" />
               <p className="text-gray-800 text-sm">
-                Based on your profile, you could boost your returns by <span className="text-[#FFB86B] font-bold">3.5%</span> by diversifying into <span className="font-bold">index funds</span>. Want a personalized investment strategy?
+                {aiSuggestion.investment ? aiSuggestion.investment : "" }
               </p>
             </div>
             <div className="flex items-center gap-2 mt-1.5 ml-7">

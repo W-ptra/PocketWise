@@ -1,17 +1,29 @@
-const { ocr } = require("../utils/AI")
+const { ocr, ask } = require("../utils/AI")
 const {
-  getTransactionsByUserId,
   getTransactionByUserIdWithoutPagination,
+  createTransactions,
 } = require("../database/postgres/transactionDatabase");
 const { setMlJournal,getMlJournal } = require("../database/redis/cacheMlJournal");
 const { isInputInvalid } = require("../utils/validation");
+const { getMonthlyAnalysisSchema,getTimePredictionPrompt,getAiSuggestionPrompt, getPdfOcrSchema } = require("../utils/schema");
+const pdfParse = require('pdf-parse');
+const customParseFormat = require("dayjs/plugin/customParseFormat");
+const dayjs = require("dayjs");
+const { getSaldoByUserId, updateSaldoByUserId } = require("../database/postgres/saldoDatabase");
+dayjs.extend(customParseFormat);
 require("dotenv").config();
 
 const ML_HOST = process.env.ML_HOST;
-const PERMITTED_TIME_RANGE = [ "week","month","year" ];
+const PERMITTED_TIME_RANGE = [ "day","month"];
+const ALLOWED_MIME_TYPE = [
+    "image/png",
+    "image/jpeg",
+    "application/pdf"
+];
 
-async function getTransactionsUsingOcr(request, h) {
+async function insertTransactionUsingOCR(request, h) {
     try{
+        const user = request.user;
         const data = request.payload;
         const image = data.image;
     
@@ -19,21 +31,62 @@ async function getTransactionsUsingOcr(request, h) {
             return h.response({ error: "Image is required and must be a file." }).code(400);
         }
     
+        const mimeType = image.hapi.headers["content-type"];
+
+        if (!ALLOWED_MIME_TYPE.includes(mimeType)) {
+            return h
+                .response({ error: `Unsupported file type: ${mimeType}. Allowed types: PNG, JPEG, PDF.` })
+                .code(400);
+        }
+
         const chunks = [];
         for await (const chunk of image) {
             chunks.push(chunk);
         }
         const buffer = Buffer.concat(chunks);
-        const base64Image = buffer.toString("base64");
-    
-        const mimeType = image.hapi.headers["content-type"];
-        const base64String = `data:${mimeType};base64,${base64Image}`;
-        const transactions = await ocr(base64String);
+
+        let newTransactions = [];
+        let newTransactionFromData = [];
+
+        if(mimeType === "application/pdf"){
+            const pdfData = await pdfParse(buffer);
+            const pdfText = pdfData.text;
+
+            const deepseekPrompt = getPdfOcrSchema(pdfText);
+            const deepseekAnswer = await ask(JSON.stringify(deepseekPrompt));
+            const deepseekResult = JSON.parse(deepseekAnswer);
+
+            newTransactions = deepseekResult.data;
+        } else {
+            const base64Image = buffer.toString("base64");
+            const base64String = `data:${mimeType};base64,${base64Image}`;
+            const transactions = await ocr(base64String);
+            newTransactions = transactions.data;
+        }
+
+        for(const transaction of newTransactions){
+
+            const parsedDate = dayjs(transaction.createdAt);
+            const transactionData = {
+                title: transaction.title,
+                type: transaction.transactionType,
+                amount: transaction.amount,
+                createdAt: parsedDate.toDate(),
+                userId: user.id,
+            };
+
+            newTransactionFromData = await createTransactions(transactionData);
+            if (transaction.transactionType === "Income") {
+            await updateSaldo(user.id, transaction.amount);
+            } else {
+            await updateSaldo(user.id, -transaction.amount);
+            }
+        }
     
         return h
             .response({
             message: "successfully retrive transactions",
-            data: transactions,
+            data: newTransactions,
             })
             .code(200);
     } catch(err){
@@ -46,9 +99,104 @@ async function getTransactionsUsingOcr(request, h) {
     }
 }
 
+async function updateSaldo(userId, amount) {
+  try {
+    const saldo = await getSaldoByUserId(userId);
+    const currentAmount = Number(saldo.amount);
+    const updateAmount = Number(amount);
+
+    if (isNaN(currentAmount) || isNaN(updateAmount)) {
+      throw new Error("Invalid amount format");
+    }
+
+    const newAmount = currentAmount + updateAmount;
+    await updateSaldoByUserId(userId, newAmount);
+  } catch (error) {
+    console.error("Error in updateSaldo:", error);
+    throw error;
+  }
+}
+
 async function getDailyJournal(request,h) {
     try{
         const journalType = "daily";
+        const user = request.user;
+    
+        const pagination = {
+            page: 1,
+            pageSize: 100,
+        }
+    
+        const timeRange = "day";
+    
+        const limit = 100;
+    
+        const queryOption = {
+            pagination,
+            timeRange,
+            limit,
+            userId: user.id
+        }
+    
+        const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
+
+        if(transactions.length === 0){
+            return h
+                .response({
+                    message: "transaction record is empty",
+                })
+                .code(404);
+        }
+    
+        const mlJournalCache = await getMlJournal(`ml:${journalType}:${transactions}::${user.id}`,transactions)
+    
+        if (mlJournalCache){
+            return h
+                .response({
+                message: "successfully retrive month journal",
+                data: mlJournalCache,
+                })
+                .code(200);
+        }
+    
+        const journal_entry = formatMlMonthlyRequest(transactions);
+    
+        const option = {
+            method: "POST",
+            headers: {
+                "Content-Type":"application/json"
+            },
+            body: JSON.stringify({journal_entry})
+        }
+        
+        const result = await fetch(`${ML_HOST}/ai/journal/month`,option);
+        const data = await result.json();
+
+        const deepseekPrompt = getMonthlyAnalysisSchema(data.feedback);
+        const deepseekAnswer = await ask(JSON.stringify(deepseekPrompt));
+        const deepseekJsonParse = JSON.parse(deepseekAnswer);
+
+        setMlJournal(`ml:${journalType}:${transactions}:${user.id}`,transactions,deepseekJsonParse);
+    
+        return h
+            .response({
+            message: "successfully retrive daily journal",
+            data: deepseekJsonParse,
+            })
+            .code(200);
+    } catch(err){
+        console.error(err);
+        return h
+            .response({
+                error: "something went wrong, please contact pocketwise support",
+            })
+            .code(500);
+    }
+}
+
+async function getTimePrediction(request,h) {
+    try{
+        const journalType = "prediction";
         const user = request.user;
         const { timeRange } = request.query;
     
@@ -70,10 +218,11 @@ async function getDailyJournal(request,h) {
     
         const queryOption = {
             userId: user.id,
-            type: "expense"
+            timeRange: "year"
         }
     
         const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
+
         const journal_entry = formatMlDayRequest(transactions);
     
         const mlJournalCache = await getMlJournal(`${journalType}:${timeRange}`,journal_entry)
@@ -94,28 +243,30 @@ async function getDailyJournal(request,h) {
                 })
                 .code(404);
         }
-    
-            const option = {
+
+        const option = {
             method: "POST",
             headers: {
                 "Content-Type":"application/json"
             },
             body: JSON.stringify({journal_entry})
         }
-        
-        const result = await fetch(`${ML_HOST}/journal/day?time=${timeRange}`,option);
+
+        const result = await fetch(`${ML_HOST}/ai/journal/day?time=month`,option);
         const data = await result.json();
-    
-        let dailyJournalGraph = formatDailyJournalToArrayWithDate(data.prediction);
-    
-        dailyJournalGraph = formatDailyJournalGraph(dailyJournalGraph,timeRange);
-    
-        setMlJournal(`${journalType}:${timeRange}`,journal_entry,dailyJournalGraph);
+
+        const mlPredictionValue = timeRange === "day" ? data.prediction[0] : data.prediction[29];
+
+        const deepseekPrompt = getTimePredictionPrompt(transactions,mlPredictionValue,timeRange);
+        const deepseekAnswer = await ask(JSON.stringify(deepseekPrompt));
+
+        const predictionResult = JSON.parse(deepseekAnswer);
+        setMlJournal(`${journalType}:${timeRange}`,journal_entry,predictionResult);
     
         return h
             .response({
                 message: `successfully retrive daily journal with time range ${timeRange}`,
-                data: dailyJournalGraph
+                data: predictionResult
             })
             .code(200);
     } catch(err){
@@ -128,73 +279,156 @@ async function getDailyJournal(request,h) {
     }
 }
 
-function formatDailyJournalToArrayWithDate(predictions){
-    let counter = 0;
-    return predictions.map( prediction => {
-        const expense = typeof(prediction) === "number" ? prediction : parseInt(prediction);
-        const date = new Date();
-        date.setDate(date.getDate() + counter);
-        
-        counter++;
-        return {
-            expense,
-            date: date.toISOString()
+async function getLifestylePrediction(request,h){
+    try{
+        const user = request.user;
+        const journalType = "lifestyle";
+        const pagination = {
+            page: 1,
+            pageSize: 100,
         }
-    } );
+    
+        const timeRange = "day";
+    
+        const limit = 100;
+    
+        const queryOption = {
+            pagination,
+            timeRange,
+            limit,
+            userId: user.id
+        }
+    
+        const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
+
+        if(transactions.length === 0){
+            return h
+                .response({
+                    message: "transaction record is empty",
+                })
+                .code(404);
+        }
+    
+        const mlJournalCache = await getMlJournal(`ml:${journalType}:${transactions}:${user.id}`,transactions)
+    
+        if (mlJournalCache){
+            return h
+                .response({
+                message: "successfully retrive month journal",
+                data: mlJournalCache,
+                })
+                .code(200);
+        }
+
+        const journal_entry = formatMlMonthlyRequest(transactions);
+    
+        const option = {
+            method: "POST",
+            headers: {
+                "Content-Type":"application/json"
+            },
+            body: JSON.stringify({journal_entry})
+        }
+        
+        const result = await fetch(`${ML_HOST}/ai/journal/lifestyle`,option);
+        const data = await result.json();
+        const prediction = data.prediction;
+
+        let lifestyle = "";
+        if(prediction === "Overspender"){
+            lifestyle = "Overspender"
+        } else if(prediction === "Beginner"){
+            lifestyle = "Beginner"
+        } else if(prediction === "Saver"){
+            lifestyle = "Savvy Saver"
+        } else if(prediction === "Balanced"){
+            lifestyle = "Balanced"
+        }
+
+        await getMlJournal(`ml:${journalType}:${transactions}:${user.id}`,lifestyle)
+
+        return h
+            .response({
+                message: "successfull get lifestyle prediction",
+                data: lifestyle
+            })
+            .code(200);
+    } catch(err){
+        console.error(err)
+        return h
+            .response({
+                error: "something went wrong, please contact pocketwise support",
+            })
+            .code(500);
+    }
 }
 
-function formatDailyJournalGraph(predictions,timeRange){
-    let journalAggregate = {}
-    let timeRangeKey = "";
-
-    predictions.forEach( prediction => {
-        const dateTime = prediction.date.split("T");
-        const date = dateTime[0].split("-");
-        
-        const year = date[0];
-        const month = date[1];
-        const day = date[2];
-        const time =  dateTime[1].split(":");
-
-        const hour = time[0];
-
-        if(timeRange === "day"){
-            timeRangeKey = `${year}/${month}/${day} ${hour}:00:00`;
-        } else if (timeRange === "week" || timeRange === "month"){
-            timeRangeKey = `${year}/${month}/${day} 00:00:00`;
-        } else if (timeRange === "year"){
-            timeRangeKey = `${year}/${month}/01 00:00:00`;
+async function getAiSuggestion(request,h){
+    try{
+        const user = request.user;
+        const journalType = "suggestion";
+        const pagination = {
+            page: 1,
+            pageSize: 100,
         }
-
-        if(!journalAggregate[timeRangeKey]){
-            journalAggregate[timeRangeKey] = {
-                date: timeRangeKey,
-                expense: 0
-            }
+    
+        const timeRange = "alltime";
+    
+        const limit = 100;
+    
+        const queryOption = {
+            pagination,
+            timeRange,
+            limit,
+            userId: user.id
         }
-        
-        let expense = typeof(prediction.expense) === "number" ? prediction.expense : parseInt(prediction.expense);
-        expense = expense > 0 ? expense : -expense;
+    
+        const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
 
-        journalAggregate[timeRangeKey].expense += expense;
-    } )
+        if(transactions.length === 0){
+            return h
+                .response({
+                    message: "transaction record is empty",
+                })
+                .code(404);
+        }
+    
+        const mlJournalCache = await getMlJournal(`ml:${journalType}:${transactions}:${user.id}`,transactions)
+    
+        if (mlJournalCache){
+            return h
+                .response({
+                message: "successfully retrive month journal",
+                data: mlJournalCache,
+                })
+                .code(200);
+        }
+    
+        const deepseekPrompt = getAiSuggestionPrompt(transactions);
+        const deepseekAnswer = await ask(JSON.stringify(deepseekPrompt));
+        const deepseekResult = JSON.parse(deepseekAnswer);
 
-    let journalGraphDataUnsort = [];
-    for(key in journalAggregate){
-        journalGraphDataUnsort.push({
-            date: journalAggregate[key].date,
-            expense: journalAggregate[key].expense,
-        })
+        await setMlJournal(`ml:${journalType}:${transactions}:${user.id}`,transactions,deepseekResult)
+
+        return h
+            .response({
+                message: "successfull get ai suggestion",
+                data: deepseekResult
+            })
+            .code(200);
+    } catch(err){
+        console.error(err)
+        return h
+            .response({
+                error: "something went wrong, please contact pocketwise support",
+            })
+            .code(500);
     }
-
-    journalGraphDataUnsort = journalGraphDataUnsort.map(({ index, ...rest }) => rest);
-
-    return journalGraphDataUnsort.sort((a, b) => new Date(a.date) - new Date(b.date));
 }
 
 function formatMlDayRequest(transactions) {
     let dateTotalExpense = {};
-    
+
     transactions.forEach(transaction => {
         const date = new Date(transaction.createdAt).toISOString().split('T')[0];
 
@@ -208,7 +442,7 @@ function formatMlDayRequest(transactions) {
     });
 
     let journal_entry = [];
-    
+
     for (key in dateTotalExpense){
         journal_entry.push({
             Date: key,
@@ -219,7 +453,7 @@ function formatMlDayRequest(transactions) {
     return journal_entry;
 }
 
-async function getMonthJournay(request,h) {
+async function getMonthJournal(request,h) {
     try{
         const journalType = "monthly";
         const user = request.user;
@@ -241,7 +475,7 @@ async function getMonthJournay(request,h) {
         }
     
         const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
-    
+
         if(transactions.length === 0){
             return h
                 .response({
@@ -250,7 +484,7 @@ async function getMonthJournay(request,h) {
                 .code(404);
         }
     
-        const mlJournalCache = await getMlJournal(`ml:${journalType}:${transactions}`,transactions)
+        const mlJournalCache = await getMlJournal(`ml:${journalType}:${transactions}:${user.id}`,transactions)
     
         if (mlJournalCache){
             return h
@@ -271,15 +505,19 @@ async function getMonthJournay(request,h) {
             body: JSON.stringify({journal_entry})
         }
         
-        const result = await fetch(`${ML_HOST}/journal/month`,option);
+        const result = await fetch(`${ML_HOST}/ai/journal/month`,option);
         const data = await result.json();
-    
-        setMlJournal(`ml:${journalType}:${transactions}`,transactions,data);
+
+        const deepseekPrompt = getMonthlyAnalysisSchema(data.feedback);
+        const deepseekAnswer = await ask(JSON.stringify(deepseekPrompt));
+        const deepseekJsonParse = JSON.parse(deepseekAnswer);
+
+        setMlJournal(`ml:${journalType}:${transactions}:${user.id}`,transactions,deepseekJsonParse);
     
         return h
             .response({
             message: "successfully retrive month journal",
-            data: data,
+            data: deepseekJsonParse,
             })
             .code(200);
     } catch(err){
@@ -308,7 +546,7 @@ function formatMlMonthlyRequest(transactions){
     }
 
     transactions.forEach(transaction => {
-        const type = transaction.transactionType.name;
+        const type = transaction.type;
         const amount = Math.abs(transaction.amount);
         if (journal_entry.hasOwnProperty(type)) {
             journal_entry[type] += amount;
@@ -319,7 +557,10 @@ function formatMlMonthlyRequest(transactions){
 }
 
 module.exports = {
-    getTransactionsUsingOcr,
+    insertTransactionUsingOCR,
+    getTimePrediction,
     getDailyJournal,
-    getMonthJournay
+    getMonthJournal,
+    getLifestylePrediction,
+    getAiSuggestion
 }

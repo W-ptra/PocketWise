@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Calendar, Camera, InfoIcon } from "lucide-react";
+import { useState, useRef } from "react";
+import { Calendar, Camera, InfoIcon, X, Upload, RefreshCw } from "lucide-react";
 import * as Ariakit from "@ariakit/react";
 
 const TransactionType = [
@@ -26,6 +26,111 @@ const TransactionForm = () => {
   });
 
   const [showTooltip, setShowTooltip] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("upload");
+  const [stream, setStream] = useState(null);
+  const [capturedImage, setCapturedImage] = useState(null);
+  const [uploadedImage, setUploadedImage] = useState(null);
+  const videoRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      setStream(mediaStream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+  };
+
+  const handleTabChange = (tab) => {
+    if (tab === "camera") {
+      startCamera();
+      setCapturedImage(null);
+    } else {
+      stopCamera();
+    }
+    setActiveTab(tab);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(videoRef.current, 0, 0);
+      
+      // Convert to blob and create a preview URL
+      canvas.toBlob((blob) => {
+        const imageUrl = URL.createObjectURL(blob);
+        setCapturedImage({
+          url: imageUrl,
+          blob: blob
+        });
+      }, 'image/jpeg', 0.95);
+    }
+  };
+
+  const retakePhoto = () => {
+    if (capturedImage) {
+      URL.revokeObjectURL(capturedImage.url);
+      startCamera();
+      setCapturedImage(null);
+    }
+  };
+
+  const handleSubmitPhoto = () => {
+    if (capturedImage) {
+      // TODO: Handle the captured image (e.g., upload to server)
+      console.log("Submitting photo:", capturedImage.blob);
+      // After successful submission:
+      stopCamera();
+      setOpen(false);
+      setCapturedImage(null);
+    }
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      setUploadedImage({
+        url: imageUrl,
+        file: file
+      });
+    }
+  };
+
+  const handleRetakeUpload = () => {
+    if (uploadedImage) {
+      URL.revokeObjectURL(uploadedImage.url);
+      setUploadedImage(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleSubmitUpload = () => {
+    if (uploadedImage) {
+      // TODO: Handle the uploaded image (e.g., upload to server)
+      console.log("Submitting uploaded image:", uploadedImage.file);
+      // After successful submission:
+      setOpen(false);
+      setUploadedImage(null);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -50,10 +155,169 @@ const TransactionForm = () => {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <Ariakit.Dialog
+        open={open}
+        onClose={() => {
+          stopCamera();
+          if (capturedImage) {
+            URL.revokeObjectURL(capturedImage.url);
+          }
+          if (uploadedImage) {
+            URL.revokeObjectURL(uploadedImage.url);
+          }
+          setOpen(false);
+        }}
+        backdrop={<div className="fixed inset-0 z-50 bg-black/50" />}
+        className="fixed inset-0 z-50 m-auto flex h-fit max-h-[80vh] w-full max-w-md flex-col gap-4 rounded-xl bg-white p-6 shadow-xl"
+      >
+        <header className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-800">Upload Receipt</h2>
+          <button 
+            onClick={() => {
+              stopCamera();
+              setOpen(false);
+            }}
+            className="rounded-full p-1 transition-colors hover:bg-gray-100"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </header>
+
+        <div className="flex gap-2 border-b">
+          <button
+            onClick={() => handleTabChange("upload")}
+            className={`px-4 py-2 text-sm font-medium ${
+              activeTab === "upload"
+                ? "border-b-2 border-[#00AB6B] text-[#00AB6B]"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <Upload className="w-4 h-4 inline-block mr-2" />
+            Upload File
+          </button>
+          <button
+            onClick={() => handleTabChange("camera")}
+            className={`px-4 py-2 text-sm font-medium ${
+              activeTab === "camera"
+                ? "border-b-2 border-[#00AB6B] text-[#00AB6B]"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <Camera className="w-4 h-4 inline-block mr-2" />
+            Take Photo
+          </button>
+        </div>
+
+        {activeTab === "upload" ? (
+          <div className="flex flex-col items-center justify-center gap-4">
+            {uploadedImage ? (
+              <>
+                <div className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                  <img 
+                    src={uploadedImage.url} 
+                    alt="Uploaded receipt" 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleRetakeUpload}
+                    className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Choose Another
+                  </button>
+                  <button
+                    onClick={handleSubmitUpload}
+                    className="rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90"
+                  >
+                    Use Image
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
+                <div className="rounded-full bg-gray-100 p-3">
+                  <Upload className="h-8 w-8 text-gray-500" />
+                </div>
+                <p className="text-gray-600">
+                  Drag and drop your receipt image here
+                  <br />
+                  or
+                </p>
+                <label className="cursor-pointer rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90">
+                  Browse Files
+                  <input 
+                    ref={fileInputRef}
+                    type="file" 
+                    className="sr-only" 
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                  />
+                </label>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden">
+              {capturedImage ? (
+                <img 
+                  src={capturedImage.url} 
+                  alt="Captured receipt" 
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
+              )}
+            </div>
+            <div className="flex gap-2">
+              {capturedImage ? (
+                <>
+                  <button
+                    onClick={retakePhoto}
+                    className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Retake
+                  </button>
+                  <button
+                    onClick={handleSubmitPhoto}
+                    className="rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90"
+                  >
+                    Use Photo
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={capturePhoto}
+                  className="rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90"
+                >
+                  Capture Photo
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        <p className="text-xs text-gray-500">
+          We'll scan the receipt and attempt to fill out the transaction details
+          for you.
+        </p>
+      </Ariakit.Dialog>
+
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-700">Add Transaction</h2>
         <div className="flex items-center gap-2">
-          <button className="text-blue-400 border border-blue-400 px-4 py-2 rounded-lg transition-all duration-300 hover:bg-blue-400 hover:text-white cursor-pointer animate-bounce">
+          <button
+            onClick={() => setOpen(true)}
+            className="text-blue-400 border border-blue-400 px-4 py-2 rounded-lg transition-all duration-300 hover:bg-blue-400 hover:text-white cursor-pointer animate-bounce"
+          >
             <Camera className="w-4 h-4" />
           </button>
           <div

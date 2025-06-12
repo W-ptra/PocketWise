@@ -209,7 +209,7 @@ function TransactionHistory() {
   return (
     <div className="min-h-screen flex flex-col bg-[#F2F2F2]">
       <Navbar />
-      <div className="flex-1 grid grid-cols-3 gap-6 p-6">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
         <div className="col-span-2">
           <TransactionTable />
         </div>

@@ -30,14 +30,15 @@ function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-6 min-h-[300px]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[300px]">
           <div className="col-span-1 row-span-1">
             <UserCategory />
           </div>
-          <div className="col-span-2 row-span-1 col-start-2">
+          <div className="col-span-1 row-span-1 md:col-span-2 md:col-start-2">
             <AISuggestions />
           </div>
         </div>
+
         <div className="w-full">
           <InvestmentSuggestions />
         </div>

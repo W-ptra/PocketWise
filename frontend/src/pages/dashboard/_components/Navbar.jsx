@@ -17,7 +17,7 @@ function Navbar({ profileImage = "/logo/User.png" }) {
                         <img
                             src="/logo/pocket-wise-logo.jpg"
                             alt="PocketWise Logo"
-                            className="w-10 h-10 rounded-full"
+                            className="size-10 rounded-full"
                         />
                         <span className="text-xl font-bold text-[#00AB6B]">
                             PocketWise
@@ -34,29 +34,29 @@ function Navbar({ profileImage = "/logo/User.png" }) {
                 </div>
 
                 {/* Navigation Links */}
-                <div className="flex justify-center space-x-8 py-2">
+                <div className="flex justify-center space-x-0 md:space-x-8 py-2">
                     <a 
                         href="/dashboard"
                         className={`flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-all duration-200 ${isActive('/dashboard')}`}
                     >
-                        <LayoutDashboard className="w-5 h-5" />
-                        <span className="font-medium">Dashboard</span>
+                        <LayoutDashboard className="size-3 md:size-5" />
+                        <span className="font-medium text-xs md:text-md">Dashboard</span>
                     </a>
 
                     <a 
                         href="/transaction-history"
                         className={`flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-all duration-200 ${isActive('/transaction-history')}`}
                     >
-                        <History className="w-5 h-5" />
-                        <span className="font-medium">Transactions</span>
+                        <History className="size-3 md:size-5" />
+                        <span className="font-medium text-xs md:text-md">Transactions</span>
                     </a>
 
                     <a 
                         href="/analysis"
                         className={`flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-all duration-200 ${isActive('/analysis')}`}
                     >
-                        <BarChart2 className="w-5 h-5" />
-                        <span className="font-medium">Analysis</span>
+                        <BarChart2 className="size-3 md:size-5" />
+                        <span className="font-medium text-xs md:text-md">Analysis</span>
                     </a>
                 </div>
             </div>

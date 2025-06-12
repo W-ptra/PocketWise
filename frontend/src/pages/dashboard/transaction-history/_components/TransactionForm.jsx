@@ -166,6 +166,7 @@ const TransactionForm = () => {
             URL.revokeObjectURL(uploadedImage.url);
           }
           setOpen(false);
+          setActiveTab("upload");
         }}
         backdrop={<div className="fixed inset-0 z-50 bg-black/50" />}
         className="fixed inset-0 z-50 m-auto flex h-fit max-h-[80vh] w-full max-w-md flex-col gap-4 rounded-xl bg-white p-6 shadow-xl"
@@ -175,7 +176,14 @@ const TransactionForm = () => {
           <button 
             onClick={() => {
               stopCamera();
+              if (capturedImage) {
+                URL.revokeObjectURL(capturedImage.url);
+              }
+              if (uploadedImage) {
+                URL.revokeObjectURL(uploadedImage.url);
+              }
               setOpen(false);
+              setActiveTab("upload");
             }}
             className="rounded-full p-1 transition-colors hover:bg-gray-100"
           >

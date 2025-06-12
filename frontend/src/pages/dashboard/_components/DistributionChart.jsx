@@ -371,7 +371,7 @@ function DistributionChart() {
           <div className="flex rounded-lg border border-gray-200 p-1">
             <button
               onClick={() => setType("expenses")}
-              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+              className={`px-1 md:px-3 py-1 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                 type === "expenses"
                   ? "bg-red-100 text-red-700"
                   : "text-gray-600 hover:bg-gray-100"
@@ -381,7 +381,7 @@ function DistributionChart() {
             </button>
             <button
               onClick={() => setType("income")}
-              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+              className={`px-1 md:px-3 py-1 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                 type === "income"
                   ? "bg-green-100 text-green-700"
                   : "text-gray-600 hover:bg-gray-100"

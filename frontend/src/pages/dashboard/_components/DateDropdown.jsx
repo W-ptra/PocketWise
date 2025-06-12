@@ -24,7 +24,7 @@ export default function DateDropdown({ onSelect }) {
     <div className="relative">
       <Ariakit.MenuProvider>
         <Ariakit.MenuButton 
-          className="flex items-center gap-2 bg-[#F8F9FA] px-4 py-2 rounded-lg border-2 border-[#00AB6B] hover:bg-[#F2F2F2] transition-all duration-200 cursor-pointer group"
+          className="flex items-center gap-2 bg-[#F8F9FA] px-1 md:px-4 py-2 rounded-lg border-2 border-[#00AB6B] hover:bg-[#F2F2F2] transition-all duration-200 cursor-pointer group"
         >
           <span className="text-sm font-semibold text-[#787878] group-hover:text-[#00AB6B] transition-colors duration-200">
             {selected}

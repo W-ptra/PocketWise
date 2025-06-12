@@ -76,7 +76,6 @@ const TransactionForm = () => {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(videoRef.current, 0, 0);
       
-      // Convert to blob and create a preview URL
       canvas.toBlob((blob) => {
         const imageUrl = URL.createObjectURL(blob);
         setCapturedImage({
@@ -95,11 +94,14 @@ const TransactionForm = () => {
     }
   };
 
-  const handleSubmitPhoto = () => {
+  const handleSubmitPhoto = async () => {
     if (capturedImage) {
-      // TODO: Handle the captured image (e.g., upload to server)
-      console.log("Submitting photo:", capturedImage.blob);
-      // After successful submission:
+      
+      const formData = new FormData();
+      formData.append("image", capturedImage.blob);
+
+      await postRequest("api/ai/ocr",getToken(),formData,true);
+
       stopCamera();
       setOpen(false);
       setCapturedImage(null);
@@ -127,11 +129,14 @@ const TransactionForm = () => {
     }
   };
 
-  const handleSubmitUpload = () => {
+  const handleSubmitUpload = async () => {
     if (uploadedImage) {
-      // TODO: Handle the uploaded image (e.g., upload to server)
-      console.log("Submitting uploaded image:", uploadedImage.file);
-      // After successful submission:
+
+      const formData = new FormData();
+      formData.append("image", uploadedImage.file);
+
+      await postRequest("api/ai/ocr",getToken(),formData,true);
+
       setOpen(false);
       setUploadedImage(null);
     }
@@ -264,11 +269,22 @@ const TransactionForm = () => {
             {uploadedImage ? (
               <>
                 <div className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                  <img 
-                    src={uploadedImage.url} 
-                    alt="Uploaded receipt" 
-                    className="w-full h-full object-contain"
-                  />
+                  {uploadedImage?.url && (
+                    uploadedImage.url.endsWith('.pdf') ? (
+                      <img 
+                        src={uploadedImage.url} 
+                        alt="Uploaded receipt" 
+                        className="w-full h-full object-contain" 
+                      />
+                    ) : (
+                      <iframe
+                        src={uploadedImage.url}
+                        title="Uploaded PDF"
+                        className="w-full h-full"
+                      />
+                      
+                    )
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -302,7 +318,7 @@ const TransactionForm = () => {
                     ref={fileInputRef}
                     type="file" 
                     className="sr-only" 
-                    accept="image/*"
+                    accept="image/*,application/pdf"
                     onChange={handleFileUpload}
                   />
                 </label>
@@ -374,7 +390,7 @@ const TransactionForm = () => {
           <div
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => setShowTooltip(false)}
-            className="relative flex items-center gap-2"
+            className="relative flex items-center gap-0 md:gap-2"
           >
             <span className="text-sm text-gray-600">Scan/Upload Receipt</span>
 

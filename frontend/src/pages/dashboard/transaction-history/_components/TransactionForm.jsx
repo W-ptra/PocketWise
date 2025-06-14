@@ -41,22 +41,38 @@ const TransactionForm = () => {
 
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
+  const videoDevicesRef = useRef([]);
 
   const startCamera = async (deviceId = null) => {
     try {
-      const constraints = {
-        video: deviceId ? { deviceId: { exact: deviceId } } : true,
-      };
+      const constraints = deviceId ? 
+        { video: { deviceId: { exact: deviceId } } } : 
+        { video: true };
+
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       setStream(mediaStream);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+      }
+
+      // Enumerate devices AFTER getting permission
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoInputs = devices.filter(device => device.kind === "videoinput");
+      
+      // Update both state and ref
+      setVideoDevices(videoInputs);
+      videoDevicesRef.current = videoInputs;
+
+      // Set current index to active device
+      if (deviceId) {
+        const activeIndex = videoInputs.findIndex(d => d.deviceId === deviceId);
+        if (activeIndex !== -1) setCurrentDeviceIndex(activeIndex);
       }
     } catch (err) {
       console.error("Error accessing camera:", err);
     }
   };
-
 
   const stopCamera = () => {
     if (stream) {
@@ -67,12 +83,8 @@ const TransactionForm = () => {
 
   const handleTabChange = async (tab) => {
     if (tab === "camera") {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoInputs = devices.filter((device) => device.kind === "videoinput");
-      setVideoDevices(videoInputs);
-      setCurrentDeviceIndex(0);
-      startCamera(videoInputs[0]?.deviceId);
       setCapturedImage(null);
+      startCamera();
     } else {
       stopCamera();
     }
@@ -99,11 +111,15 @@ const TransactionForm = () => {
   };
 
   const rotateCamera = () => {
-    if (videoDevices.length > 1) {
-      const nextIndex = (currentDeviceIndex + 1) % videoDevices.length;
+    const devices = videoDevicesRef.current;
+    
+    if (devices.length > 1) {
+      const nextIndex = (currentDeviceIndex + 1) % devices.length;
+      const nextDeviceId = devices[nextIndex].deviceId;
+      
       setCurrentDeviceIndex(nextIndex);
       stopCamera();
-      startCamera(videoDevices[nextIndex].deviceId);
+      startCamera(nextDeviceId);
     } else {
       console.warn("Only one camera device found.");
     }

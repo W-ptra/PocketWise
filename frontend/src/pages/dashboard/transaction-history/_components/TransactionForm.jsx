@@ -36,12 +36,18 @@ const TransactionForm = () => {
   const [stream, setStream] = useState(null);
   const [capturedImage, setCapturedImage] = useState(null);
   const [uploadedImage, setUploadedImage] = useState(null);
+  const [videoDevices, setVideoDevices] = useState([]);
+  const [currentDeviceIndex, setCurrentDeviceIndex] = useState(0);
+
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  const startCamera = async () => {
+  const startCamera = async (deviceId = null) => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const constraints = {
+        video: deviceId ? { deviceId: { exact: deviceId } } : true,
+      };
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
@@ -51,6 +57,7 @@ const TransactionForm = () => {
     }
   };
 
+
   const stopCamera = () => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
@@ -58,15 +65,20 @@ const TransactionForm = () => {
     }
   };
 
-  const handleTabChange = (tab) => {
+  const handleTabChange = async (tab) => {
     if (tab === "camera") {
-      startCamera();
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoInputs = devices.filter((device) => device.kind === "videoinput");
+      setVideoDevices(videoInputs);
+      setCurrentDeviceIndex(0);
+      startCamera(videoInputs[0]?.deviceId);
       setCapturedImage(null);
     } else {
       stopCamera();
     }
     setActiveTab(tab);
   };
+
 
   const capturePhoto = () => {
     if (videoRef.current) {
@@ -85,6 +97,18 @@ const TransactionForm = () => {
       }, 'image/jpeg', 0.95);
     }
   };
+
+  const rotateCamera = () => {
+    if (videoDevices.length > 1) {
+      const nextIndex = (currentDeviceIndex + 1) % videoDevices.length;
+      setCurrentDeviceIndex(nextIndex);
+      stopCamera();
+      startCamera(videoDevices[nextIndex].deviceId);
+    } else {
+      console.warn("Only one camera device found.");
+    }
+  };
+
 
   const retakePhoto = () => {
     if (capturedImage) {
@@ -361,12 +385,21 @@ const TransactionForm = () => {
                   </button>
                 </>
               ) : (
-                <button
-                  onClick={capturePhoto}
-                  className="rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90"
-                >
-                  Capture Photo
-                </button>
+                <>
+                  <button
+                    onClick={capturePhoto}
+                    className="rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90 cursor-pointer"
+                  >
+                    Capture Photo
+                  </button>
+                  <button
+                    onClick={rotateCamera}
+                    className="rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90 cursor-pointer"
+                  >
+                    Rotate Camera
+                  </button>
+                </>
+                
               )}
             </div>
           </div>

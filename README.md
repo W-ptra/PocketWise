@@ -22,7 +22,7 @@ please refer to each application documentation
 - [Machine Leaning doc](ML/README.md)
 
 ## Docker Compose
-The entire applications also can be started up using ``docker compose`` by running following script
+The entire applications also can be started up using ``docker compose`` by running following script. ``Warning this might take alot of time which depend on your internet speed``.
 ```bash
 docker-compose up -d --build
 ```

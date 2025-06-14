@@ -7,7 +7,7 @@ Pocketwise is a financial management web app capstone project on the part of ``c
 
 ## Special Thanks To
 
-<img src="https://drive.google.com/uc?export=view&id=1cGoEgUQRm5mcsAm3TheMiRLhC2sWCaea" alt="img1" width="200" height="200" /> <img src="https://drive.google.com/uc?export=view&id=1DWvAbyDw7vlagpipEnXFAz2U1VKvtBfN" alt="img2" width="200" height="200" /> <img src="https://drive.google.com/uc?export=view&id=1E_mBJM8IxGVSerbJyV_A2jeDgfxCVb6Z" alt="img3" width="200" height="200" />
+<img src="https://drive.google.com/uc?export=view&id=1cGoEgUQRm5mcsAm3TheMiRLhC2sWCaea" alt="img1" style="background-color: white; padding: 4px; border-radius: 8px;" /> <img src="https://drive.google.com/uc?export=view&id=1DWvAbyDw7vlagpipEnXFAz2U1VKvtBfN" style="background-color: white; padding: 4px; border-radius: 8px;" alt="img2"  /> <img src="https://drive.google.com/uc?export=view&id=1E_mBJM8IxGVSerbJyV_A2jeDgfxCVb6Z" style="background-color: white; padding: 4px; border-radius: 8px;" alt="img3"  />
 
 ## Getting Started
 1. Clone this repo 

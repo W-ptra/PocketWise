@@ -101,14 +101,14 @@ services:
     networks:
       - capstone_network
     
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate run --token x
-    restart: unless-stopped
-    depends_on:
-      - nginx
-    networks:
-      - capstone_network
+  # cloudflared:
+  #   image: cloudflare/cloudflared:latest
+  #   command: tunnel --no-autoupdate run --token x
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - nginx
+  #   networks:
+  #     - capstone_network
 
 networks:
   capstone_network:

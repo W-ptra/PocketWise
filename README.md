@@ -18,7 +18,7 @@ git clone https://github.com/W-ptra/PocketWise.git
 2. Start every application
 please refer to each application documentation
 - [Frontend doc](frontend/README.md)
-- [Backend doc](backend/README.md)
+- [Backend doc](backend/readme.md)
 - [Machine Leaning doc](ML/README.md)
 
 ## Docker Compose

@@ -1,6 +1,11 @@
 import { useState, useRef } from "react";
 import { Calendar, Camera, InfoIcon, X, Upload, RefreshCw } from "lucide-react";
 import * as Ariakit from "@ariakit/react";
+import { postRequest } from "~utils/api";
+import { getToken } from "~utils/localStorage";
+import { useMutation } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const TransactionType = [
   "Income",
@@ -31,15 +36,38 @@ const TransactionForm = () => {
   const [stream, setStream] = useState(null);
   const [capturedImage, setCapturedImage] = useState(null);
   const [uploadedImage, setUploadedImage] = useState(null);
+  const [videoDevices, setVideoDevices] = useState([]);
+  const [currentDeviceIndex, setCurrentDeviceIndex] = useState(0);
+
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
+  const videoDevicesRef = useRef([]);
 
-  const startCamera = async () => {
+  const startCamera = async (deviceId = null) => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const constraints = deviceId ? 
+        { video: { deviceId: { exact: deviceId } } } : 
+        { video: true };
+
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       setStream(mediaStream);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+      }
+
+      // Enumerate devices AFTER getting permission
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoInputs = devices.filter(device => device.kind === "videoinput");
+      
+      // Update both state and ref
+      setVideoDevices(videoInputs);
+      videoDevicesRef.current = videoInputs;
+
+      // Set current index to active device
+      if (deviceId) {
+        const activeIndex = videoInputs.findIndex(d => d.deviceId === deviceId);
+        if (activeIndex !== -1) setCurrentDeviceIndex(activeIndex);
       }
     } catch (err) {
       console.error("Error accessing camera:", err);
@@ -53,15 +81,16 @@ const TransactionForm = () => {
     }
   };
 
-  const handleTabChange = (tab) => {
+  const handleTabChange = async (tab) => {
     if (tab === "camera") {
-      startCamera();
       setCapturedImage(null);
+      startCamera();
     } else {
       stopCamera();
     }
     setActiveTab(tab);
   };
+
 
   const capturePhoto = () => {
     if (videoRef.current) {
@@ -71,7 +100,6 @@ const TransactionForm = () => {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(videoRef.current, 0, 0);
       
-      // Convert to blob and create a preview URL
       canvas.toBlob((blob) => {
         const imageUrl = URL.createObjectURL(blob);
         setCapturedImage({
@@ -82,6 +110,22 @@ const TransactionForm = () => {
     }
   };
 
+  const rotateCamera = () => {
+    const devices = videoDevicesRef.current;
+    
+    if (devices.length > 1) {
+      const nextIndex = (currentDeviceIndex + 1) % devices.length;
+      const nextDeviceId = devices[nextIndex].deviceId;
+      
+      setCurrentDeviceIndex(nextIndex);
+      stopCamera();
+      startCamera(nextDeviceId);
+    } else {
+      console.warn("Only one camera device found.");
+    }
+  };
+
+
   const retakePhoto = () => {
     if (capturedImage) {
       URL.revokeObjectURL(capturedImage.url);
@@ -90,11 +134,14 @@ const TransactionForm = () => {
     }
   };
 
-  const handleSubmitPhoto = () => {
+  const handleSubmitPhoto = async () => {
     if (capturedImage) {
-      // TODO: Handle the captured image (e.g., upload to server)
-      console.log("Submitting photo:", capturedImage.blob);
-      // After successful submission:
+      
+      const formData = new FormData();
+      formData.append("image", capturedImage.blob);
+
+      await postRequest("api/ai/ocr",getToken(),formData,true);
+
       stopCamera();
       setOpen(false);
       setCapturedImage(null);
@@ -122,11 +169,14 @@ const TransactionForm = () => {
     }
   };
 
-  const handleSubmitUpload = () => {
+  const handleSubmitUpload = async () => {
     if (uploadedImage) {
-      // TODO: Handle the uploaded image (e.g., upload to server)
-      console.log("Submitting uploaded image:", uploadedImage.file);
-      // After successful submission:
+
+      const formData = new FormData();
+      formData.append("image", uploadedImage.file);
+
+      await postRequest("api/ai/ocr",getToken(),formData,true);
+
       setOpen(false);
       setUploadedImage(null);
     }
@@ -147,10 +197,48 @@ const TransactionForm = () => {
     }));
   };
 
+  const queryClient = useQueryClient();
+
+  const { mutate: createTransaction, isLoading } = useMutation({
+    mutationFn: async () => {
+      const token = getToken();
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const payload = {
+        title: formData.title,
+        amount: Number(formData.amount),
+        transactionType: formData.transactionType.replace(/\s+/g, '_'),
+        createdAt: new Date(formData.date).toISOString(),
+      };
+
+      const result = await postRequest("api/transaction", token, payload);
+      if (result.error) {
+        throw new Error(result.message || "Failed to create transaction");
+      }
+      return result;
+    },
+    onSuccess: () => {
+      toast.success("Transaction created successfully");
+      setFormData({
+        amount: "",
+        title: "",
+        transactionType: TransactionType[0],
+        date: new Date().toISOString().split("T")[0],
+      });
+      
+      queryClient.invalidateQueries(["transactions"]);
+    },
+    onError: (error) => {
+      toast.error("Transaction creation failed");
+      console.error("Transaction creation failed:", error);
+    }
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // TODO: Handle form submission
-    console.log(formData);
+    createTransaction();
   };
 
   return (
@@ -221,11 +309,22 @@ const TransactionForm = () => {
             {uploadedImage ? (
               <>
                 <div className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                  <img 
-                    src={uploadedImage.url} 
-                    alt="Uploaded receipt" 
-                    className="w-full h-full object-contain"
-                  />
+                  {uploadedImage?.url && (
+                    uploadedImage.url.endsWith('.pdf') ? (
+                      <img 
+                        src={uploadedImage.url} 
+                        alt="Uploaded receipt" 
+                        className="w-full h-full object-contain" 
+                      />
+                    ) : (
+                      <iframe
+                        src={uploadedImage.url}
+                        title="Uploaded PDF"
+                        className="w-full h-full"
+                      />
+                      
+                    )
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -259,7 +358,7 @@ const TransactionForm = () => {
                     ref={fileInputRef}
                     type="file" 
                     className="sr-only" 
-                    accept="image/*"
+                    accept="image/*,application/pdf"
                     onChange={handleFileUpload}
                   />
                 </label>
@@ -302,12 +401,21 @@ const TransactionForm = () => {
                   </button>
                 </>
               ) : (
-                <button
-                  onClick={capturePhoto}
-                  className="rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90"
-                >
-                  Capture Photo
-                </button>
+                <>
+                  <button
+                    onClick={capturePhoto}
+                    className="rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90 cursor-pointer"
+                  >
+                    Capture Photo
+                  </button>
+                  <button
+                    onClick={rotateCamera}
+                    className="rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90 cursor-pointer"
+                  >
+                    Rotate Camera
+                  </button>
+                </>
+                
               )}
             </div>
           </div>
@@ -331,7 +439,7 @@ const TransactionForm = () => {
           <div
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => setShowTooltip(false)}
-            className="relative flex items-center gap-2"
+            className="relative flex items-center gap-0 md:gap-2"
           >
             <span className="text-sm text-gray-600">Scan/Upload Receipt</span>
 
@@ -431,9 +539,10 @@ const TransactionForm = () => {
         <div className="pt-2">
           <button
             type="submit"
-            className="w-full rounded-lg bg-[#00AB6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#00AB6B]/90 focus:outline-none focus:ring-2 focus:ring-[#00AB6B] focus:ring-offset-2 transition-colors duration-200 cursor-pointer"
+            disabled={isLoading}
+            className="w-full rounded-lg bg-[#00AB6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#00AB6B]/90 focus:outline-none focus:ring-2 focus:ring-[#00AB6B] focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
-            Add Transaction
+            {isLoading ? "Adding..." : "Add Transaction"}
           </button>
         </div>
       </form>

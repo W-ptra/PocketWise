@@ -16,17 +16,32 @@ exports.plugin = {
                         allow: "multipart/form-data"
                     }
                 },
-                handler: aiService.getTransactionsUsingOcr
+                handler: aiService.insertTransactionUsingOCR
             },
             {
                 method: "GET",
                 path: "/journal/month",
-                handler: aiService.getMonthJournay
+                handler: aiService.getMonthJournal
             },
             {
                 method: "GET",
                 path: "/journal/day",
                 handler: aiService.getDailyJournal
+            },
+            {
+                method: "GET",
+                path: "/journal/prediction",
+                handler: aiService.getTimePrediction
+            },
+            {
+                method: "GET",
+                path: "/journal/lifestyle",
+                handler: aiService.getLifestylePrediction
+            },
+            {
+                method: "GET",
+                path: "/journal/suggestion",
+                handler: aiService.getAiSuggestion
             }
         ]);
     }

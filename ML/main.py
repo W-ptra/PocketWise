@@ -5,6 +5,7 @@ import joblib
 from dotenv import load_dotenv
 from controller.process_journal_month import process_journal_month
 from controller.process_journal_day import process_journal_day
+from controller.process_journal_klasifikasi import process_lifestyle_classification_model
 
 load_dotenv()
 
@@ -22,16 +23,24 @@ scaler_day = joblib.load('model/model_day_LSTM/scaler_day.pkl')
 scaler_month_day = joblib.load('model/model_day_LSTM/scaler_month.pkl')
 scaler_flag = joblib.load('model/model_day_LSTM/scaler_flag.pkl')
 
+# load klasifikasi model
+model_lifestyle = joblib.load('model/model_gaya_hidup/model_rf.pkl')
+preprocessor = joblib.load('model/model_gaya_hidup/preprocessor.pkl')
+
 categories = ['Rent', 'Loan_Repayment', 'Insurance', 'Groceries', 'Transport',
               'Eating_Out', 'Entertainment', 'Utilities', 'Healthcare', 'Education']
 
-@app.route('/journal/month', methods=['POST'])
+@app.route('/ai/journal/month', methods=['POST'])
 def journal_route_month():
     return process_journal_month(request, model_month, scaler_month_month, categories)
 
-@app.route('/journal/day', methods=['POST'])
+@app.route('/ai/journal/day', methods=['POST'])
 def journal_route_day():
     return process_journal_day(model_day, scaler_expense, scaler_weekday, scaler_day, scaler_month_day, scaler_flag)
+
+@app.route('/ai/journal/lifestyle', methods=['POST'])
+def journal_route_lifestyle():
+    return process_lifestyle_classification_model(request, model_lifestyle, preprocessor, categories)
 
 if __name__ == '__main__':
     print("Registered routes:")

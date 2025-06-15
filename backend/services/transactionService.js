@@ -2,455 +2,350 @@ const {
   getTransactionByUserIdWithoutPagination,
   createTransactions,
   getTransactionsByUserId,
-  getTransactionsByIds,
+  getSingleTransactionByUserId,
   updateTransaction,
   deleteTransactions,
+  getExpensesByUserId,
+  getIncomeByUserId,
 } = require("../database/postgres/transactionDatabase");
-const { getSaldoByUserId,updateSaldoByUserId } = require("../database/postgres/saldoDatabase");
-const { getTransactionTypesByIds } = require("../database/postgres/transactionTypeDatabase");
-const { isInputInvalid, isTransactionDateInvalid } = require("../utils/validation");
+const {
+  getSaldoByUserId,
+  updateSaldoByUserId,
+} = require("../database/postgres/saldoDatabase");
+const customParseFormat = require("dayjs/plugin/customParseFormat");
+const dayjs = require("dayjs");
+dayjs.extend(customParseFormat);
 
-const ALLOWED_TIME_RANGE = ["day","week","month","year","alltime"];
-const ALLOWED_TRANSACTION_TYPE = ["income","expense","all"];
+const TransactionType = {
+  Income: "Income",
+  Rent: "Rent",
+  Loan_Repayment: "Loan_Repayment",
+  Insurance: "Insurance",
+  Groceries: "Groceries",
+  Transport: "Transport",
+  Eating_Out: "Eating_Out",
+  Entertainment: "Entertainment",
+  Utilities: "Utilities",
+  Healthcare: "Healthcare",
+  Education: "Education",
+};
 
-async function getAllTransaction(request, h) {
-  try{
-    const user = request.user;
-  
-    const queryOption = {
-      page = 1,
-      pageSize = 10,
-      type,
-      timeRange,
-      limit,
-      pagination
-    } = request.query;
-  
-    pagination = pagination === undefined || pagination === "true" ? true : false;
+async function getAllTransactions(request, h) {
+  const user = request.user;
 
-  
-    queryOption["userId"] = user.id;
-    queryOption.page = typeof(queryOption.page) === "number" ? queryOption.page : parseInt(queryOption.page);
-    queryOption.pageSize = typeof(queryOption.pageSize) === "number" ? queryOption.pageSize : parseInt(queryOption.pageSize);
-  
-    const transactions = pagination ? await getTransactionsByUserId(queryOption) : await getTransactionByUserIdWithoutPagination(queryOption);
-  
-    if(transactions.length === 0){
+  const queryOption = ({ type, timeRange, limit, pagination } = request.query);
+
+  pagination = pagination === "true" ? true : false;
+
+  queryOption.userId = user.id;
+  if (pagination) {
+    queryOption.page = Number(queryOption.page) || 1;
+    queryOption.pageSize = Number(queryOption.pageSize) || 10;
+  }
+
+  try {
+    const transactions = pagination
+      ? await getTransactionsByUserId(queryOption)
+      : await getTransactionByUserIdWithoutPagination(queryOption);
+
+    if (pagination) {
       return h
         .response({
-          error: "transaction record is empty",
+          message: "Successfully retrieve transactions data",
+          data: transactions || {
+            data: [],
+            total: 0,
+            page: queryOption.page,
+            pageSize: queryOption.pageSize,
+            totalPages: 0,
+          },
         })
-        .code(404);
+        .code(200);
     }
-  
+
     return h
       .response({
-        message: "successfully retrive transactions data",
-        data: transactions,
+        message: "Successfully retrieve transactions data",
+        data: transactions || [],
       })
       .code(200);
-  } catch(err){
-      console.error(err);
-      return h
-        .response({
-          error: "something went wrong, please contact pocketwise support",
-        })
-        .code(500);
+  } catch (error) {
+    console.error("Error in getAllTransactions:", error);
+    return h
+      .response({
+        error: "Internal server error",
+      })
+      .code(500);
   }
 }
 
-async function getAllTransactionTypeComparision(request,h){
-  try{
-    const user = request.user;
-    const queryOption = {
-      pagination,
-      type,
-      timeRange,
-      limit
-    } = request.query;
+async function getAllExpenses(request, h) {
+  const user = request.user;
+  const queryOption = ({ timeRange } = request.query);
 
-    if(!ALLOWED_TIME_RANGE.includes(timeRange)){
-      return h
-        .response({
-          error: "time range is invalid",
-        })
-        .code(400);
-    }
-
-    if(!ALLOWED_TRANSACTION_TYPE.includes(type)){
-      return h
-        .response({
-          error: "type is invalid",
-        })
-        .code(400);
-    }
-
-    queryOption["userId"] = user.id;
-    const transactions = await getTransactionByUserIdWithoutPagination(queryOption);
-
-    const transactionTypeComparision = getTransactionTypeComparationFromTransaction(transactions,type);
-
-    if(transactionTypeComparision.total === 0){
-      return h
-        .response({
-          error: "transaction comparision record is empty",
-        })
-        .code(404);
-    }
-  
+  try {
+    const expenses = await getExpensesByUserId(user.id, queryOption);
     return h
       .response({
-        message: "successfully retrive transactions comparision",
-        data: transactionTypeComparision,
+        message: "Successfully retrieve expenses data",
+        data: expenses,
       })
       .code(200);
-  } catch(err){
-      console.error(err);
-      return h
-        .response({
-          error: "something went wrong, please contact pocketwise support",
-        })
-        .code(500);
+  } catch (error) {
+    console.error("Error in getAllExpenses:", error);
+    return h
+      .response({
+        error: "Internal server error",
+      })
+      .code(500);
+  }
+}
+
+async function getAllIncome(request, h) {
+  const user = request.user;
+  const queryOption = ({ timeRange } = request.query);
+
+  try {
+    const income = await getIncomeByUserId(user.id, queryOption);
+    return h
+      .response({
+        message: "Successfully retrieve income data",
+        data: income,
+      })
+      .code(200);
+  } catch (error) {
+    console.error("Error in getAllIncome:", error);
+    return h
+      .response({
+        error: "Internal server error",
+      })
+      .code(500);
   }
 }
 
 async function createNewTransactions(request, h) {
   try {
     const user = request.user;
-    const { transactions } = request.payload;
+    const { title, transactionType, amount, createdAt } = request.payload;
 
-    if (isInputInvalid(transactions))
+    // Validate required fields
+    if (!title || !transactionType || amount === undefined || !createdAt) {
       return h
         .response({
-          message: "invalid input",
-        })
-        .code(400);
-
-    if(isTransactionTypeIdValid(transactions)){
-      return h
-        .response({
-          message: "transactionTypeId must number and range between 1 to 11",
-        })
-        .code(400);
-    }
-  
-    if(isTransactionDateInvalid(transactions)){
-      return h
-        .response({
-          message: "createdAt is invalid, please use YYYY-MM-DD HH:MM:SS format",
+          error: "Missing required fields",
         })
         .code(400);
     }
 
-    if(isTransactionAmountInvalid(transactions)){
+    // Validate transaction type
+    if (!Object.values(TransactionType).includes(transactionType)) {
       return h
         .response({
-          message: "amount is invalid, please make sure the type is number and negative value for expense and positive for income",
+          error: "Invalid transaction type",
+          validTypes: Object.values(TransactionType),
         })
         .code(400);
     }
 
-    let newTransactions = getNewTransactionsFromRequestPayload(
-      user.id,
-      processTransactions(transactions)
-    );
-
-    const invalidTransactionTypeIds =
-      await getInvalidTransactionTypeIds(newTransactions);
-
-    if (invalidTransactionTypeIds.length > 0){
+    // Validate amount
+    const numAmount = Number(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
       return h
         .response({
-          error: `Invalid transaction type IDs: ${invalidTransactionTypeIds.join(", ")}`,
+          error: "Amount must be a positive number",
         })
-        .code(403);
+        .code(400);
     }
 
-    newTransactions = await createTransactions(newTransactions);
+    // Validate date format
+    const parsedDate = dayjs(createdAt);
+    if (!parsedDate.isValid()) {
+      return h
+        .response({
+          error: "Invalid date format for createdAt",
+        })
+        .code(400);
+    }
 
-    const totalAmount = getTotalAmount(newTransactions);
-    await updateSaldo(user.id,totalAmount);
+    const transactionData = {
+      title,
+      type: transactionType,
+      amount: numAmount,
+      createdAt: parsedDate.toDate(),
+      userId: user.id,
+    };
+
+    const newTransaction = await createTransactions(transactionData);
+    if (transactionType === "Income") {
+      await updateSaldo(user.id, numAmount);
+    } else {
+      await updateSaldo(user.id, -numAmount);
+    }
+
     return h
       .response({
-        message: "Successfully created new transactions",
-        data: newTransactions,
+        message: "Successfully created new transaction",
+        data: newTransaction,
       })
-      .code(200);
-  } catch(err){
-      console.error(err);
-      return h
-        .response({
-          error: "something went wrong, please contact pocketwise support",
-        })
-        .code(500);
+      .code(201);
+  } catch (error) {
+    console.error("Error in createNewTransactions:", error);
+    return h
+      .response({
+        error: "Internal server error",
+      })
+      .code(500);
   }
-}
-
-function isTransactionTypeIdValid(transactions) {
-  return transactions.some(transaction => {
-    const rawId = transaction.transactionTypeId;
-    const transactionTypeId = typeof rawId === "number" ? rawId : parseInt(rawId);
-
-    if (isNaN(transactionTypeId)) return true;
-
-    return transactionTypeId < 1 || transactionTypeId > 11;
-  });
-}
-
-function processTransactions(transactions) {
-
-  return transactions.map(transaction => {
-    const { id,transactionTypeId, ...rest } = transaction;
-
-    let transactionTypeIdNumber = typeof(transactionTypeId) === "number" ? transactionTypeId : parseInt(transactionTypeId)
-
-    return {
-      transactionTypeId: transactionTypeIdNumber,
-      ...rest
-    };
-  });
-}
-
-function isTransactionAmountInvalid(transactions){
-  for(const transaction in transactions){
-    const amount = typeof(transaction.amount) === "number" ? transaction.amount : parseInt(transaction.amount);
-    
-    if( (transaction.transactionTypeId === "1" && amount < 0) || (transaction.transactionTypeId !== "1" && amount > 0)) return true;
-  }
-  return false;
 }
 
 async function updateTransactions(request, h) {
   try {
     const user = request.user;
-    const { transactions } = request.payload;
+    const { id, title, transactionType, amount, createdAt } = request.payload;
 
-    if (isInputInvalid(transactions))
+    if (!id) {
       return h
         .response({
-          message: "invalid input",
+          error: "Transaction ID is required",
         })
         .code(400);
-
-    let newTransactions = getNewTransactionsFromRequestPayload(
-      user.id,
-      transactions
-    );
-
-    const invalidTransactionIds =
-      await getInvalidTransactionTypeIds(newTransactions);
-
-    if (invalidTransactionIds.length > 0){
-      return h
-        .response({
-          error: `Invalid transaction type IDs: ${invalidTransactionIds}`,
-        })
-        .code(403);
     }
-    const forbiddenTransactionIds = await getForbiddenTransactionIds(
-      user.id,
-      newTransactions
-    );
-    if (forbiddenTransactionIds.length > 0)
+
+    const existingTransaction = await getSingleTransactionByUserId(user.id, id);
+    if (!existingTransaction) {
       return h
         .response({
-          error: `Transaction with IDs: ${forbiddenTransactionIds.join(", ")} doesn't belong to current User`,
+          error: "Transaction not found",
         })
-        .code(403);
+        .code(404);
+    }
 
-    const totalAmountOld = await getTotalAmountFromTransaction(newTransactions);
-    newTransactions = await updateTransaction(
-      user.id,
-      newTransactions
-    );
+    const updateData = {};
 
-    const totalAmountNew = getTotalAmount(newTransactions);
+    if (title) updateData.title = title;
+    if (transactionType) {
+      if (!Object.values(TransactionType).includes(transactionType)) {
+        return h
+          .response({
+            error: "Invalid transaction type",
+            validTypes: Object.values(TransactionType),
+          })
+          .code(400);
+      }
+      updateData.type = transactionType;
+    }
+    if (amount !== undefined) {
+      const numAmount = Number(amount);
+      if (isNaN(numAmount) || numAmount <= 0) {
+        return h
+          .response({
+            error: "Amount must be a positive number",
+          })
+          .code(400);
+      }
+      updateData.amount = numAmount;
+    }
+    if (createdAt) {
+      const parsedDate = dayjs(createdAt);
+      if (!parsedDate.isValid()) {
+        return h
+          .response({
+            error: "Invalid date format for createdAt",
+          })
+          .code(400);
+      }
+      updateData.createdAt = parsedDate.toDate();
+    }
 
-    const delta = totalAmountNew - totalAmountOld;
-    await updateSaldo(user.id,delta);
+    const updatedTransaction = await updateTransaction(user.id, {
+      id,
+      ...updateData,
+    });
+
+    if (updateData.amount) {
+      const delta = updateData.amount - existingTransaction.amount;
+      await updateSaldo(user.id, delta);
+    }
 
     return h
       .response({
-        message: `Successfully updated transactions`,
-        data: newTransactions,
+        message: "Successfully updated transaction",
+        data: updatedTransaction,
       })
       .code(200);
-  } catch(err){
-      console.error(err);
-      return h
-        .response({
-          error: "something went wrong, please contact pocketwise support",
-        })
-        .code(500);
+  } catch (error) {
+    console.error("Error in updateTransactions:", error);
+    return h
+      .response({
+        error: "Internal server error",
+      })
+      .code(500);
   }
 }
 
 async function deleteTransaction(request, h) {
-  try{
+  try {
     const user = request.user;
-  
-    const { ids } = request.payload;
-  
-    if (isInputInvalid(ids))
+    const { id } = request.payload;
+
+    if (!id) {
       return h
         .response({
-          message: "invalid input",
+          error: "Transaction ID is required",
         })
         .code(400);
-  
-    let mismatchedTransactionIds = [];
-    let transactionIds = [];
-    const transactions = await getTransactionsByIds(ids);
-  
-    transactions.map((transaction) => {
-      if (transaction.userId !== user.id) {
-        mismatchedTransactionIds.push(transaction.id);
-      }
-      transactionIds.push(transaction.id);
-    });
-  
-    if (mismatchedTransactionIds.length > 0)
+    }
+
+    const transaction = await getSingleTransactionByUserId(user.id, id);
+    if (!transaction) {
       return h
         .response({
-          error: `Transactions with IDs ${mismatchedTransactionIds.join(", ")} do not belong to the current user.`,
+          error: "Transaction not found",
         })
-        .code(403);
-  
-    const totalAmount = (getTotalAmount(transactions) * -1);
-  
-    await deleteTransactions(transactionIds);
-  
-    await updateSaldo(user.id,totalAmount);
-  
+        .code(404);
+    }
+
+    await deleteTransactions(id);
+    await updateSaldo(user.id, -transaction.amount);
+
     return h
       .response({
-        message: `Successfully delete transactions with id ${transactionIds.join(", ")}`,
+        message: `Successfully deleted transaction with id ${id}`,
       })
       .code(200);
-  } catch(err){
-      console.error(err);
-      return h
-        .response({
-          error: "something went wrong, please contact pocketwise support",
-        })
-        .code(500);
+  } catch (error) {
+    console.error("Error in deleteTransaction:", error);
+    return h
+      .response({
+        error: "Internal server error",
+      })
+      .code(500);
   }
 }
 
-function getNewTransactionsFromRequestPayload(userId, transactions) {
-  return transactions.map((transaction) => {
-    return {
-      id: transaction.id,
-      title: transaction.title,
-      amount: parseInt(transaction.amount),
-      createdAt: new Date(transaction.createdAt),
-      transactionTypeId: parseInt(transaction.transactionTypeId),
-      userId: userId,
-    };
-  });
-}
+async function updateSaldo(userId, amount) {
+  try {
+    const saldo = await getSaldoByUserId(userId);
+    const currentAmount = Number(saldo.amount);
+    const updateAmount = Number(amount);
 
-async function getInvalidTransactionTypeIds(transactions) {
-  const distinctTransactionTypeIdsArray =
-    getDistinctTransactionTypeId(transactions);
-
-  const confirmedTransactionTypes = await getTransactionTypesByIds(
-    distinctTransactionTypeIdsArray
-  );
-  const confirmedTransactionTypeIds = confirmedTransactionTypes.map(
-    (confirmedTransactionTypes) => {
-      return confirmedTransactionTypes.id;
+    if (isNaN(currentAmount) || isNaN(updateAmount)) {
+      throw new Error("Invalid amount format");
     }
-  );
 
-  let invalidTransactionTypeIds = [];
-  distinctTransactionTypeIdsArray.forEach((distinctTransactionTypeId) => {
-    if (!confirmedTransactionTypeIds.includes(distinctTransactionTypeId)) {
-        invalidTransactionTypeIds.push(distinctTransactionTypeId)
-    }
-  });
-
-  return invalidTransactionTypeIds
-}
-
-async function getForbiddenTransactionIds(userId, transactions) {
-  const transactionIds = transactions.map((transaction) => transaction.id);
-  const transactionFromDBs = await getTransactionsByIds(transactionIds);
-
-  let forbiddenTransactionIds = [];
-  transactionFromDBs.forEach((transactionFromDB) => {
-    if (transactionFromDB.userId !== userId) {
-        forbiddenTransactionIds.push(transactionFromDB.id)
-    }
-  });
-  return forbiddenTransactionIds;
-}
-
-function getDistinctTransactionTypeId(transactions) {
-  const distinctTransactionTypeIdsMap = new Map();
-  transactions.forEach((transaction) => {
-    const id = transaction.transactionTypeId;
-
-    if (!distinctTransactionTypeIdsMap.get(id)) {
-      distinctTransactionTypeIdsMap.set(id, id);
-    }
-  });
-  
-  return [...distinctTransactionTypeIdsMap.keys()];
-}
-
-async function getTotalAmountFromTransaction(newTransaction){
-  const transactionIds = newTransaction.map((transaction) => transaction.id);
-  const transactionFromDBs = await getTransactionsByIds(transactionIds);
-  return getTotalAmount(transactionFromDBs);
-}
-
-function getTotalAmount(transactions){
-  let total = 0;
-  [...transactions].forEach(transaction => total += parseInt(transaction.amount))
-  return total;
-}
-
-async function updateSaldo(userId,amounts){
-  try{
-  const saldo = await getSaldoByUserId(userId);
-  const saldoTotalAmount = parseInt(saldo.amount) + parseInt(amounts);
-  await updateSaldoByUserId(userId,saldoTotalAmount);
-  }catch(err){
-    console.log(err)
+    const newAmount = currentAmount + updateAmount;
+    await updateSaldoByUserId(userId, newAmount);
+  } catch (error) {
+    console.error("Error in updateSaldo:", error);
+    throw error;
   }
-}
-
-function getTransactionTypeComparationFromTransaction(transactions,type){
-  let comparation = {}
-  transactions.forEach(transaction => {
-
-    if(type === "expense"){
-      if (!comparation[transaction.transactionType.name]) {
-        comparation[transaction.transactionType.name] = 0;
-      }
-    } else if(type === "income"){
-      if (!comparation[transaction.title]) {
-        comparation[transaction.title] = 0;
-      }
-    }
-
-    let amount = typeof(transaction.amount) === "number" ? transaction.amount : parseInt(transaction.amount);
-    amount = amount > 0 ? amount : (amount * -1);
-
-    if(type === "expense"){
-      comparation[transaction.transactionType.name] += amount;
-    } else if(type === "income"){
-      comparation[transaction.title] += amount;
-    }
-  })
-  return comparation;
 }
 
 module.exports = {
-  getAllTransactionTypeComparision,
-  getAllTransaction,
+  getAllTransactions,
   createNewTransactions,
   updateTransactions,
   deleteTransaction,
+  getAllExpenses,
+  getAllIncome,
 };

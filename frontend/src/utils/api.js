@@ -40,7 +40,9 @@ async function makeApiRequest(endpoint=null,method=null, token=null, payload=nul
         const request = await fetch(url,requestOption);
 
         if(request.status === 401){
-             deleteToken();
+            deleteToken();
+            window.location.href = "/login";
+            return;
         }
 
         const respond = request.json();

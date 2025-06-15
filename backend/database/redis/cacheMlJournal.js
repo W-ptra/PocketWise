@@ -1,6 +1,6 @@
 const { get,set } = require("./redis");
 
-const ttl = 60*60;
+const ttl = 60*60*5;
 
 async function setMlJournal(type,transactions,result){
     const transactionsString = JSON.stringify(transactions);

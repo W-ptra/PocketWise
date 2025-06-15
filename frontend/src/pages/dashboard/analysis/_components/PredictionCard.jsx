@@ -1,4 +1,7 @@
+import { getRequest } from "@/utils/api";
 import { Brain, TrendingUp, AlertTriangle, Calendar, Clock, ChevronRight, Bot, ArrowUp, ArrowDown } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { getToken } from "@/utils/localStorage";
 
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('id-ID', {
@@ -8,6 +11,18 @@ const formatCurrency = (amount) => {
     maximumFractionDigits: 0
   }).format(amount);
 };
+
+const getPrediction = async () => {
+  const monthResult = await getRequest(`api/ai/journal/prediction?timeRange=month`,getToken());
+  const tomorrowResult = await getRequest(`api/ai/journal/prediction?timeRange=day`,getToken());
+  
+  const data = {
+    tomorrow: tomorrowResult.data.data,
+    nextMonth: monthResult.data.data
+  }
+  console.log(data);
+  return data;
+}
 
 const PredictionCard = ({ predictions = {} }) => {
   // Sample predictions if none provided
@@ -50,7 +65,12 @@ const PredictionCard = ({ predictions = {} }) => {
     }
   };
 
-  const predictions_data = Object.keys(predictions).length > 0 ? predictions : samplePredictions;
+  const { data: predictionsData = {}, isLoadingMonthly, isErrorMonthky, errorMonthly } = useQuery({
+    queryKey: ['prediction:alltime'],
+    queryFn: () => getPrediction()
+  });
+
+  const predictions_data = Object.keys(predictionsData).length > 0 ? predictionsData : samplePredictions;
 
   const PredictionSection = ({ title, icon: Icon, data, colorClass }) => (
     <div className={`p-6 rounded-xl bg-white border-l-4 ${colorClass}`}>

@@ -1,12 +1,11 @@
-# React + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+[<- back to main doc](../README.md#usage)
+# Prerequisite
+1. Node.js min ``v20.2.0``
+2. Google Oauth client Id ``(optional if you want enable google login)``, please refer to [official google Oauth doc](https://developers.google.com/identity/protocols/oauth2)
+# Getting started
+1. create ``.env`` file and paste it with content from ``.example.env``, adjust the application setting on env variable.
+2. run following script
+```bash
+npm install
+npm run dev
+```

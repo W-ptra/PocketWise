@@ -1,13 +1,10 @@
 const { PrismaClient } = require("../../generated/prisma");
 const prisma = new PrismaClient();
 
-async function createTransactions(transactions) {
-  const created = [];
-    for (const tx of transactions) {
-      const result = await prisma.transaction.create({ data: tx });
-      created.push(result);
-    }
-  return created;
+async function createTransactions(transaction) {
+  return await prisma.transaction.create({
+    data: transaction,
+  });
 }
 
 async function getSingleTransactionByUserId(userId, transactionId) {
@@ -21,18 +18,18 @@ async function getSingleTransactionByUserId(userId, transactionId) {
 
 async function getTransactionByUserIdWithoutPagination(option = {}) {
   const queryOption = queryOptionBuilderWithoutPagination(option);
-  console.log(queryOption);
+
   const data = await prisma.transaction.findMany({
-      ...queryOption,
-      select: {
-        id: true,
-        title: true,
-        amount: true,
-        createdAt: true,
-        transactionType: true,
-      },
+    ...queryOption,
+    select: {
+      id: true,
+      title: true,
+      amount: true,
+      createdAt: true,
+      type: true,
+    },
   });
-  console.log(data);
+
   return data;
 }
 
@@ -43,23 +40,23 @@ async function getTransactionsByUserId(option = {}) {
 
   const queryOption = queryOptionBuilder(option);
   const [data, total] = await Promise.all([
-      prisma.transaction.findMany({
-        ...queryOption,
-        select: {
-          id: true,
-          title: true,
-          amount: true,
-          createdAt: true,
-          transactionType: true,
-        },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-      prisma.transaction.count({
-        where: { userId },
-      }),
-    ]);
-    
+    prisma.transaction.findMany({
+      ...queryOption,
+      select: {
+        id: true,
+        title: true,
+        amount: true,
+        createdAt: true,
+        type: true,
+      },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.transaction.count({
+      where: { userId },
+    }),
+  ]);
+
   return {
     data,
     total,
@@ -80,44 +77,121 @@ async function getTransactionsByIds(ids) {
   });
 }
 
-async function updateTransaction(userId, transactionList) {
-  return await Promise.all(
-    transactionList.map(tx =>
-      prisma.transaction.update({
-        where: {
-          id: tx.id,
-          userId: userId
-        },
-        data: {
-          title: tx.title,
-          amount: tx.amount,
-          createdAt: tx.createdAt,
-          transactionTypeId: tx.transactionTypeId
-        }
-      })
-    )
-  );
+async function updateTransaction(userId, transaction) {
+  return await prisma.transaction.update({
+    where: {
+      id: transaction.id,
+      userId: userId,
+    },
+    data: {
+      title: transaction.title,
+      amount: transaction.amount,
+      createdAt: transaction.createdAt,
+      type: transaction.type,
+    },
+  });
+}
+
+async function getExpensesByUserId(userId, queryOption = {}) {
+  const { timeRange } = queryOption;
+  let createdAtFilter;
+
+  if (timeRange && timeRange !== "alltime") {
+    const now = new Date();
+    let fromDate = new Date(now);
+
+    if (timeRange === "day") {
+      fromDate.setDate(fromDate.getDate() - 1);
+    } else if (timeRange === "week") {
+      fromDate.setDate(fromDate.getDate() - 7);
+    } else if (timeRange === "month") {
+      fromDate.setMonth(fromDate.getMonth() - 1);
+    } else if (timeRange === "year") {
+      fromDate.setFullYear(fromDate.getFullYear() - 1);
+    }
+
+    fromDate.setHours(0, 0, 0, 0);
+
+    createdAtFilter = {
+      gte: fromDate,
+    };
+  }
+
+  return await prisma.transaction.findMany({
+    where: {
+      userId,
+      type: {
+        not: "Income",
+      },
+      ...(createdAtFilter && { createdAt: createdAtFilter }),
+    },
+    orderBy: {
+      createdAt: 'desc'
+    },
+    select: {
+      id: true,
+      title: true,
+      amount: true,
+      createdAt: true,
+      type: true,
+    },
+  });
+}
+
+async function getIncomeByUserId(userId, queryOption = {}) {
+  const { timeRange } = queryOption;
+  let createdAtFilter;
+
+  if (timeRange  && timeRange !== "alltime") {
+    const now = new Date();
+    let fromDate = new Date(now);
+
+    if (timeRange === "day") {
+      fromDate.setDate(fromDate.getDate() - 1);
+    } else if (timeRange === "week") {
+      fromDate.setDate(fromDate.getDate() - 7);
+    } else if (timeRange === "month") {
+      fromDate.setMonth(fromDate.getMonth() - 1);
+    } else if (timeRange === "year") {
+      fromDate.setFullYear(fromDate.getFullYear() - 1);
+    }
+
+    fromDate.setHours(0, 0, 0, 0);
+
+    createdAtFilter = {
+      gte: fromDate,
+    };
+  }
+
+  return await prisma.transaction.findMany({
+    where: {
+      userId,
+      type: "Income",
+      ...(createdAtFilter && { createdAt: createdAtFilter }),
+    },
+    orderBy: {
+      createdAt: 'desc'
+    },
+    select: {
+      id: true,
+      title: true,
+      amount: true,
+      createdAt: true,
+      type: true,
+    },
+  });
 }
 
 async function deleteTransactions(transactionId) {
-  return await prisma.transaction.deleteMany({
+  return await prisma.transaction.delete({
     where: {
-      id: {
-        in: transactionId
-      },
+      id: transactionId,
     },
   });
 }
 
 function queryOptionBuilder(option = {}) {
-  const {
-    userId,
-    page,
-    pageSize,
-    type,
-    timeRange,
-    limit,
-  } = option;
+  const { userId, page, pageSize, type, timeRange, limit } = option;
 
   let amountFilter;
   let createdAtFilter;
@@ -150,7 +224,7 @@ function queryOptionBuilder(option = {}) {
     fromDate.setHours(0, 0, 0, 0);
 
     createdAtFilter = {
-      gte: fromDate
+      gte: fromDate,
     };
   }
 
@@ -161,31 +235,18 @@ function queryOptionBuilder(option = {}) {
       ...(createdAtFilter && { createdAt: createdAtFilter }),
     },
     orderBy,
-    ...(type ? { take: parseInt(limit) || 8 } : {
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    }),
   };
 }
 
 function queryOptionBuilderWithoutPagination(option = {}) {
-  const {
-    userId,
-    type,
-    timeRange,
-  } = option;
-
+  const { userId, type, timeRange } = option;
 
   let amountFilter;
   let createdAtFilter;
   let orderBy;
 
   if (type === "expense") {
-    amountFilter = { lt: 0 };
     orderBy = { amount: "asc" };
-  } else if (type === "income") {
-    amountFilter = { gt: 0 };
-    orderBy = { amount: "desc" };
   } else {
     orderBy = { createdAt: "desc" };
   }
@@ -203,11 +264,11 @@ function queryOptionBuilderWithoutPagination(option = {}) {
     } else if (timeRange === "year") {
       fromDate.setFullYear(fromDate.getFullYear() - 1);
     }
-    
+
     fromDate.setHours(0, 0, 0, 0);
 
     createdAtFilter = {
-      gte: fromDate
+      gte: fromDate,
     };
   }
 
@@ -229,4 +290,6 @@ module.exports = {
   getTransactionsByUserId,
   updateTransaction,
   deleteTransactions,
+  getExpensesByUserId,
+  getIncomeByUserId,
 };

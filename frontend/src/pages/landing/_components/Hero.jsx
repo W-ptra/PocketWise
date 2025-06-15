@@ -1,5 +1,5 @@
 import React from "react";
-import landingImage from "../../../assets/landing-image.svg";
+import landingImage from "../../../assets/landing-image.png";
 
 function Hero() {
   return (

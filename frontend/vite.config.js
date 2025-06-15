@@ -2,44 +2,12 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
-import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: [
-        'favicon.svg',
-        'robots.txt',
-        'apple-touch-icon.png',
-        'icons/icon-192x192.png',
-        'icons/icon-512x512.png',
-      ],
-      manifest: {
-        name: 'PocketWise',
-        short_name: 'PocketWise',
-        description: 'Smart expense tracking app',
-        start_url: '/',
-        display: 'standalone',
-        background_color: '#ffffff',
-        theme_color: '#4f46e5',
-        icons: [
-          {
-            src: 'icons/icon-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-          },
-          {
-            src: 'icons/icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-          },
-        ],
-      },
-    })
   ],
   resolve: {
     alias: {
@@ -62,7 +30,7 @@ export default defineConfig({
         secure: false,
         rewrite: (path) => path.replace(/^\/googleusercontent/, ''),
         headers: {
-          'User-Agent': 'Mozilla/5.0',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
           'Accept': 'image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
           'Accept-Encoding': 'gzip, deflate, br',
           'Connection': 'keep-alive'

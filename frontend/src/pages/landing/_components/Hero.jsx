@@ -25,12 +25,16 @@ function Hero() {
                 Achieve your financial freedom with AI-powered personal financial advice for a brighter future.
               </p>
               <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 animate-fade-in-up animation-delay-600">
-                <button className="bg-white text-[#00AB6B] px-8 py-3.5 rounded-full font-semibold hover:bg-[#EAEAEA] transition-all duration-300 hover:scale-105 hover:shadow-lg transform hover:-translate-y-1">
-                  Get Started
-                </button>
-                <button className="border-2 border-white text-white px-8 py-3.5 rounded-full font-semibold hover:bg-white/10 transition-all duration-300 transform hover:-translate-y-1">
-                  Watch Demo
-                </button>
+                <a href="/login">
+                  <button className="bg-white text-[#00AB6B] px-8 py-3.5 rounded-full font-semibold hover:bg-[#EAEAEA] transition-all duration-300 hover:scale-105 hover:shadow-lg transform hover:-translate-y-1 cursor-pointer">
+                    Get Started
+                  </button>
+                </a>
+                <a href="/login">
+                  <button className="border-2 border-white text-white px-8 py-3.5 rounded-full font-semibold hover:bg-white/10 transition-all duration-300 transform hover:-translate-y-1 cursor-pointer">
+                    Watch Demo
+                  </button>
+                </a>
               </div>
             </div>
           </div>

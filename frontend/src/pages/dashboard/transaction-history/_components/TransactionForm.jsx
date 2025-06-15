@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Calendar, Camera, InfoIcon, X, Upload, RefreshCw } from "lucide-react";
 import * as Ariakit from "@ariakit/react";
 import { postRequest } from "~utils/api";
@@ -38,6 +38,7 @@ const TransactionForm = () => {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [videoDevices, setVideoDevices] = useState([]);
   const [currentDeviceIndex, setCurrentDeviceIndex] = useState(0);
+  const [isLoadingUploadOcr, setIsLoadingUploadOcr] = useState(false);
 
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -91,7 +92,6 @@ const TransactionForm = () => {
     setActiveTab(tab);
   };
 
-
   const capturePhoto = () => {
     if (videoRef.current) {
       const canvas = document.createElement('canvas');
@@ -137,14 +137,25 @@ const TransactionForm = () => {
   const handleSubmitPhoto = async () => {
     if (capturedImage) {
       
+      setIsLoadingUploadOcr(true);
+
       const formData = new FormData();
       formData.append("image", capturedImage.blob);
 
-      await postRequest("api/ai/ocr",getToken(),formData,true);
+      try{
+        await postRequest("api/ai/ocr",getToken(),formData,true);
+      } catch(err){
+        console.log(err);
+        setIsLoadingUploadOcr(false);
+      } finally {
+        setIsLoadingUploadOcr(false);
+      }
 
       stopCamera();
       setOpen(false);
       setCapturedImage(null);
+
+      window.location.reload();
     }
   };
 
@@ -152,6 +163,7 @@ const TransactionForm = () => {
     const file = e.target.files[0];
     if (file) {
       const imageUrl = URL.createObjectURL(file);
+      
       setUploadedImage({
         url: imageUrl,
         file: file
@@ -171,14 +183,22 @@ const TransactionForm = () => {
 
   const handleSubmitUpload = async () => {
     if (uploadedImage) {
-
+      setIsLoadingUploadOcr(true);
       const formData = new FormData();
       formData.append("image", uploadedImage.file);
 
-      await postRequest("api/ai/ocr",getToken(),formData,true);
+      try{
+        await postRequest("api/ai/ocr",getToken(),formData,true);
+      } catch (err){
+        console.log(err);
+        setIsLoadingUploadOcr(false);
+      } finally {
+        setIsLoadingUploadOcr(false);
+      }
 
       setOpen(false);
       setUploadedImage(null);
+      window.location.reload();
     }
   };
 
@@ -241,312 +261,339 @@ const TransactionForm = () => {
     createTransaction();
   };
 
+
+useEffect(() => {
+  const body = document.body;
+  if (isLoadingUploadOcr) {
+    body.style.overflow = "hidden";
+  } else {
+    body.style.overflow = "auto";
+  }
+
+  return () => {
+    body.style.overflow = "auto";
+  };
+}, [isLoadingUploadOcr]);
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <Ariakit.Dialog
-        open={open}
-        onClose={() => {
-          stopCamera();
-          if (capturedImage) {
-            URL.revokeObjectURL(capturedImage.url);
-          }
-          if (uploadedImage) {
-            URL.revokeObjectURL(uploadedImage.url);
-          }
-          setOpen(false);
-          setActiveTab("upload");
-        }}
-        backdrop={<div className="fixed inset-0 z-50 bg-black/50" />}
-        className="fixed inset-0 z-50 m-auto flex h-fit max-h-[80vh] w-full max-w-md flex-col gap-4 rounded-xl bg-white p-6 shadow-xl"
-      >
-        <header className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-800">Upload Receipt</h2>
-          <button 
-            onClick={() => {
-              stopCamera();
-              if (capturedImage) {
-                URL.revokeObjectURL(capturedImage.url);
-              }
-              if (uploadedImage) {
-                URL.revokeObjectURL(uploadedImage.url);
-              }
-              setOpen(false);
-              setActiveTab("upload");
-            }}
-            className="rounded-full p-1 transition-colors hover:bg-gray-100"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </header>
+    <>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <Ariakit.Dialog
+          open={open}
+          onClose={() => {
+            stopCamera();
+            if (capturedImage) {
+              URL.revokeObjectURL(capturedImage.url);
+            }
+            if (uploadedImage) {
+              URL.revokeObjectURL(uploadedImage.url);
+            }
+            setOpen(false);
+            setActiveTab("upload");
+          }}
+          backdrop={<div className="fixed inset-0 z-40 bg-black/50" />}
+          className="fixed inset-0 z-40 m-auto flex h-fit max-h-[80vh] w-full max-w-md flex-col gap-4 rounded-xl bg-white p-6 shadow-xl"
+        >
+          <header className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-gray-800">Upload Receipt</h2>
+            <button 
+              onClick={() => {
+                stopCamera();
+                if (capturedImage) {
+                  URL.revokeObjectURL(capturedImage.url);
+                }
+                if (uploadedImage) {
+                  URL.revokeObjectURL(uploadedImage.url);
+                }
+                setOpen(false);
+                setActiveTab("upload");
+              }}
+              className="rounded-full p-1 transition-colors hover:bg-gray-100"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </header>
 
-        <div className="flex gap-2 border-b">
-          <button
-            onClick={() => handleTabChange("upload")}
-            className={`px-4 py-2 text-sm font-medium ${
-              activeTab === "upload"
-                ? "border-b-2 border-[#00AB6B] text-[#00AB6B]"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            <Upload className="w-4 h-4 inline-block mr-2" />
-            Upload File
-          </button>
-          <button
-            onClick={() => handleTabChange("camera")}
-            className={`px-4 py-2 text-sm font-medium ${
-              activeTab === "camera"
-                ? "border-b-2 border-[#00AB6B] text-[#00AB6B]"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            <Camera className="w-4 h-4 inline-block mr-2" />
-            Take Photo
-          </button>
-        </div>
+          <div className="flex gap-2 border-b">
+            <button
+              onClick={() => handleTabChange("upload")}
+              className={`px-4 py-2 text-sm font-medium ${
+                activeTab === "upload"
+                  ? "border-b-2 border-[#00AB6B] text-[#00AB6B]"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Upload className="w-4 h-4 inline-block mr-2" />
+              Upload File
+            </button>
+            <button
+              onClick={() => handleTabChange("camera")}
+              className={`px-4 py-2 text-sm font-medium ${
+                activeTab === "camera"
+                  ? "border-b-2 border-[#00AB6B] text-[#00AB6B]"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Camera className="w-4 h-4 inline-block mr-2" />
+              Take Photo
+            </button>
+          </div>
 
-        {activeTab === "upload" ? (
-          <div className="flex flex-col items-center justify-center gap-4">
-            {uploadedImage ? (
-              <>
-                <div className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                  {uploadedImage?.url && (
-                    uploadedImage.url.endsWith('.pdf') ? (
-                      <img 
-                        src={uploadedImage.url} 
-                        alt="Uploaded receipt" 
-                        className="w-full h-full object-contain" 
-                      />
-                    ) : (
-                      <iframe
-                        src={uploadedImage.url}
-                        title="Uploaded PDF"
-                        className="w-full h-full"
-                      />
-                      
-                    )
-                  )}
+          {activeTab === "upload" ? (
+            <div className="flex flex-col items-center justify-center gap-4">
+              {uploadedImage ? (
+                <>
+                  <div className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                    {uploadedImage?.url && (
+                      uploadedImage.file.type === "application/pdf" ? (
+                        
+                        <iframe
+                          src={uploadedImage.url}
+                          title="Uploaded PDF"
+                          className="w-full h-full"
+                        />
+                      ) : (
+                        <img 
+                          src={uploadedImage.url} 
+                          alt="Uploaded receipt" 
+                          className="w-full h-full object-contain" 
+                        />
+                      )
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleRetakeUpload}
+                      className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Choose Another
+                    </button>
+                    <button
+                      onClick={handleSubmitUpload}
+                      className="rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90 cursor-pointer"
+                    >
+                      Upload
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
+                  <div className="rounded-full bg-gray-100 p-3">
+                    <Upload className="h-8 w-8 text-gray-500" />
+                  </div>
+
+                  <label className="cursor-pointer rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90">
+                    Browse Files
+                    <input 
+                      ref={fileInputRef}
+                      type="file" 
+                      className="sr-only" 
+                      accept="image/*,application/pdf"
+                      onChange={handleFileUpload}
+                    />
+                  </label>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleRetakeUpload}
-                    className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    Choose Another
-                  </button>
-                  <button
-                    onClick={handleSubmitUpload}
-                    className="rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90"
-                  >
-                    Use Image
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
-                <div className="rounded-full bg-gray-100 p-3">
-                  <Upload className="h-8 w-8 text-gray-500" />
-                </div>
-                <p className="text-gray-600">
-                  Drag and drop your receipt image here
-                  <br />
-                  or
-                </p>
-                <label className="cursor-pointer rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90">
-                  Browse Files
-                  <input 
-                    ref={fileInputRef}
-                    type="file" 
-                    className="sr-only" 
-                    accept="image/*,application/pdf"
-                    onChange={handleFileUpload}
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                {capturedImage ? (
+                  <img 
+                    src={capturedImage.url} 
+                    alt="Captured receipt" 
+                    className="w-full h-full object-contain"
                   />
-                </label>
+                ) : (
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+                )}
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-4">
-            <div className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden">
-              {capturedImage ? (
-                <img 
-                  src={capturedImage.url} 
-                  alt="Captured receipt" 
-                  className="w-full h-full object-contain"
-                />
-              ) : (
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  className="w-full h-full object-cover"
-                />
+              <div className="flex gap-2">
+                {capturedImage ? (
+                  <>
+                    <button
+                      onClick={retakePhoto}
+                      className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Retake
+                    </button>
+                    <button
+                      onClick={handleSubmitPhoto}
+                      className="rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90 cursor-pointer"
+                    >
+                      Use Photo
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={capturePhoto}
+                      className="rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90 cursor-pointer"
+                    >
+                      Capture Photo
+                    </button>
+                    <button
+                      onClick={rotateCamera}
+                      className="rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90 cursor-pointer"
+                    >
+                      Rotate Camera
+                    </button>
+                  </>
+                  
+                )}
+              </div>
+            </div>
+          )}
+
+          <p className="text-xs text-gray-500">
+            We'll scan the receipt and attempt to fill out the transaction details
+            for you.
+          </p>
+        </Ariakit.Dialog>
+
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-700">Add Transaction</h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setOpen(true)}
+              className="text-blue-400 border border-blue-400 px-4 py-2 rounded-lg transition-all duration-300 hover:bg-blue-400 hover:text-white cursor-pointer animate-bounce"
+            >
+              <Camera className="w-4 h-4" />
+            </button>
+            <div
+              onMouseEnter={() => setShowTooltip(true)}
+              onMouseLeave={() => setShowTooltip(false)}
+              className="relative flex items-center gap-0 md:gap-2"
+            >
+              <span className="text-sm text-gray-600">Scan/Upload Receipt</span>
+
+              <InfoIcon className="w-4 h-4 text-gray-600 opacity-50 cursor-pointer" />
+              {showTooltip && (
+                <div className="absolute right-0 bottom-8 bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs text-gray-700 w-64 z-20">
+                  Scan or upload your receipt to automatically fill in the
+                  transaction details.
+                </div>
               )}
             </div>
-            <div className="flex gap-2">
-              {capturedImage ? (
-                <>
-                  <button
-                    onClick={retakePhoto}
-                    className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    Retake
-                  </button>
-                  <button
-                    onClick={handleSubmitPhoto}
-                    className="rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90"
-                  >
-                    Use Photo
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={capturePhoto}
-                    className="rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90 cursor-pointer"
-                  >
-                    Capture Photo
-                  </button>
-                  <button
-                    onClick={rotateCamera}
-                    className="rounded-lg bg-[#00AB6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00AB6B]/90 cursor-pointer"
-                  >
-                    Rotate Camera
-                  </button>
-                </>
-                
-              )}
-            </div>
-          </div>
-        )}
-
-        <p className="text-xs text-gray-500">
-          We'll scan the receipt and attempt to fill out the transaction details
-          for you.
-        </p>
-      </Ariakit.Dialog>
-
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-700">Add Transaction</h2>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setOpen(true)}
-            className="text-blue-400 border border-blue-400 px-4 py-2 rounded-lg transition-all duration-300 hover:bg-blue-400 hover:text-white cursor-pointer animate-bounce"
-          >
-            <Camera className="w-4 h-4" />
-          </button>
-          <div
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
-            className="relative flex items-center gap-0 md:gap-2"
-          >
-            <span className="text-sm text-gray-600">Scan/Upload Receipt</span>
-
-            <InfoIcon className="w-4 h-4 text-gray-600 opacity-50 cursor-pointer" />
-            {showTooltip && (
-              <div className="absolute right-0 bottom-8 bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs text-gray-700 w-64 z-20">
-                Scan or upload your receipt to automatically fill in the
-                transaction details.
-              </div>
-            )}
           </div>
         </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label
+              htmlFor="amount"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Amount
+            </label>
+            <div className="relative rounded-lg">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                Rp.
+              </div>
+              <input
+                type="number"
+                min="0"
+                name="amount"
+                id="amount"
+                value={formData.amount}
+                onChange={handleChange}
+                className="block w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-gray-900 placeholder:text-gray-400 focus:border-[#00AB6B] focus:outline-none focus:ring-1 focus:ring-[#00AB6B] sm:text-sm cursor-pointer"
+                placeholder="0.00"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Title Field */}
+          <div>
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Title
+            </label>
+            <input
+              type="text"
+              name="title"
+              id="title"
+              value={formData.title}
+              onChange={handleChange}
+              className="block w-full rounded-lg border border-gray-300 py-2 px-3 text-gray-900 placeholder:text-gray-400 focus:border-[#00AB6B] focus:outline-none focus:ring-1 focus:ring-[#00AB6B] sm:text-sm cursor-pointer"
+              placeholder="Enter transaction title"
+              required
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="transactionType"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Transaction Type
+            </label>
+            <TransactionDropdown
+              selected={formData.transactionType}
+              onSelect={handleTransactionTypeChange}
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="date"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Date
+            </label>
+            <div className="relative rounded-lg">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <Calendar className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="date"
+                name="date"
+                id="date"
+                value={formData.date}
+                onChange={handleChange}
+                className="block w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-gray-900 focus:border-[#00AB6B] focus:outline-none focus:ring-1 focus:ring-[#00AB6B] sm:text-sm cursor-pointer"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full rounded-lg bg-[#00AB6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#00AB6B]/90 focus:outline-none focus:ring-2 focus:ring-[#00AB6B] focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {isLoading ? "Adding..." : "Add Transaction"}
+            </button>
+          </div>
+        </form>
       </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label
-            htmlFor="amount"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Amount
-          </label>
-          <div className="relative rounded-lg">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-              Rp.
-            </div>
-            <input
-              type="number"
-              min="0"
-              name="amount"
-              id="amount"
-              value={formData.amount}
-              onChange={handleChange}
-              className="block w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-gray-900 placeholder:text-gray-400 focus:border-[#00AB6B] focus:outline-none focus:ring-1 focus:ring-[#00AB6B] sm:text-sm cursor-pointer"
-              placeholder="0.00"
-              required
-            />
+      { isLoadingUploadOcr && (
+        <div
+          className="fixed text-white font-medium top-0 bottom-0 left-0 right-0 bg-gray-900 z-50 flex flex-col items-center justify-center pointer-events-none"
+        >
+          <div className="flex items-center text-lg space-x-1">
+            <span>Uploading</span>
+            <span className="flex">
+              <span className="animate-bounce [animation-delay:-0.3s]">.</span>
+              <span className="animate-bounce [animation-delay:-0.15s]">.</span>
+              <span className="animate-bounce">.</span>
+            </span>
           </div>
+          <span className="text-md">Please wait for a moment</span>
         </div>
-
-        {/* Title Field */}
-        <div>
-          <label
-            htmlFor="title"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Title
-          </label>
-          <input
-            type="text"
-            name="title"
-            id="title"
-            value={formData.title}
-            onChange={handleChange}
-            className="block w-full rounded-lg border border-gray-300 py-2 px-3 text-gray-900 placeholder:text-gray-400 focus:border-[#00AB6B] focus:outline-none focus:ring-1 focus:ring-[#00AB6B] sm:text-sm cursor-pointer"
-            placeholder="Enter transaction title"
-            required
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="transactionType"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Transaction Type
-          </label>
-          <TransactionDropdown
-            selected={formData.transactionType}
-            onSelect={handleTransactionTypeChange}
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="date"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Date
-          </label>
-          <div className="relative rounded-lg">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <Calendar className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="date"
-              name="date"
-              id="date"
-              value={formData.date}
-              onChange={handleChange}
-              className="block w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-gray-900 focus:border-[#00AB6B] focus:outline-none focus:ring-1 focus:ring-[#00AB6B] sm:text-sm cursor-pointer"
-              required
-            />
-          </div>
-        </div>
-
-        <div className="pt-2">
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full rounded-lg bg-[#00AB6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#00AB6B]/90 focus:outline-none focus:ring-2 focus:ring-[#00AB6B] focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-          >
-            {isLoading ? "Adding..." : "Add Transaction"}
-          </button>
-        </div>
-      </form>
-    </div>
+      ) }
+    </>
   );
 };
 
@@ -575,7 +622,7 @@ const TransactionDropdown = ({ selected, onSelect }) => {
       </Ariakit.MenuButton>
       <Ariakit.Menu
         gutter={4}
-        className="z-50 max-h-[280px] w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg focus:outline-none"
+        className="z-40 max-h-[280px] w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg focus:outline-none"
       >
         {TransactionType.map((type) => (
           <Ariakit.MenuItem

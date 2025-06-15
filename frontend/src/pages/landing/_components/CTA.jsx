@@ -21,9 +21,11 @@ function CTA() {
                 Sign Up Free
               </button>
             </a>
-            <button className="border-2 border-white text-white px-8 py-3 rounded-full font-semibold hover:bg-white/10 transition-all duration-300 w-full sm:w-auto">
-              Schedule a Demo
-            </button>
+            <a href="/register">
+              <button className="border-2 border-white text-white px-8 py-3 rounded-full font-semibold hover:bg-white/10 transition-all duration-300 w-full sm:w-auto  cursor-pointer">
+                Schedule a Demo
+              </button>
+            </a>
           </div>
         </div>
       </div>
